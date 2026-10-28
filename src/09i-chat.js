@@ -1,6 +1,6 @@
 /* ==========================================================================
    DISCUSSION EN LIGNE
-   Un message écrit avec la touche T, au salon comme en partie. L'hôte reçoit les messages des invités, les nettoie
+   Un message écrit avec la touche de discussion (Entrée par défaut, réglable), au salon comme en partie. L'hôte reçoit les messages des invités, les nettoie
    (longueur, caractères de contrôle, cadence, mots refusés masqués par api/_lib/filtre.js) et les rediffuse à tout le monde avec
    l'identifiant, le pseudo et l'équipe de l'auteur ; chacun les nettoie encore à l'arrivée. Un joueur masqué dans l'onglet Joueurs du
    salon (NET.muted) n'apparaît plus dans la discussion de celui qui l'a masqué.
@@ -23,7 +23,7 @@ function chatRender() {
     const end = lobby.scrollTop + lobby.clientHeight >= lobby.scrollHeight - 30;
     lobby.textContent = '';
     for (const m of log) lobby.appendChild(chatLine(m, mine));
-    if (!log.length) { const e = document.createElement('div'); e.className = 'cm empty'; e.textContent = TOUCH.on || PAD.drive ? _t('Aucun message pour l\u0027instant.') : _t('Aucun message. Appuyez sur T pour écrire.'); lobby.appendChild(e); }
+    if (!log.length) { const e = document.createElement('div'); e.className = 'cm empty'; e.textContent = TOUCH.on || PAD.drive ? _t('Aucun message pour l\u0027instant.') : _t('Aucun message. Appuyez sur {0} pour écrire.', chatKeyName()); lobby.appendChild(e); }
     if (end) lobby.scrollTop = lobby.scrollHeight;
   }
   if (game) { game.textContent = ''; for (const m of log.slice(-6)) { const el = chatLine(m, mine); el.dataset.at = m.at; game.appendChild(el); } chatFade(); }
@@ -69,7 +69,11 @@ function chatIn(m) {
   if (id ? id !== NET.me : netClean(m.n) !== netClean(NET.nick)) sfxUi('notify');
 }
 
-/* Saisie en partie : T ouvre, Entrée envoie, Échap annule. Les touches de jeu sont suspendues pendant la saisie. */
+/* Saisie en partie : la touche de discussion ouvre (Entrée par défaut, réglable dans Options > Commandes), Entrée envoie, Échap annule.
+   Les touches de jeu sont suspendues pendant la saisie. */
+function chatKey() { try { return window.BOKEYS ? BOKEYS.code('chat') : 'Enter'; } catch (e) { return 'Enter'; } }
+function chatKeyIs(code) { const k = chatKey(); return !!k && (code === k || (k === 'Enter' && code === 'NumpadEnter')); }
+function chatKeyName() { try { return window.BOKEYS ? BOKEYS.K('chat') : _t('Entrée'); } catch (e) { return _t('Entrée'); } }
 function chatOpen() {
   if (CHAT.open || !NET.on || KS.map.open) return;
   CHAT.open = true; $('chatBox').classList.add('open');
@@ -91,8 +95,9 @@ function chatInit() {
   $('chatIn').addEventListener('keyup', (e) => e.stopPropagation());
   $('chatIn').addEventListener('blur', () => chatClose());
   addEventListener('keydown', (e) => {
-    if (e.code !== 'KeyT' || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
-    const a = document.activeElement; if (a && (a.tagName === 'INPUT' || a.tagName === 'SELECT' || a.tagName === 'TEXTAREA')) return;
+    if (!chatKeyIs(e.code) || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+    const a = document.activeElement; if (a && (a.tagName === 'INPUT' || a.tagName === 'SELECT' || a.tagName === 'TEXTAREA' || a.isContentEditable)) return;
+    if (/Enter$/.test(e.code) && a && a !== document.body && MATCH.state === 'menu' && a.matches && a.matches('button, a, [role="button"], [tabindex]')) return; // Entrée sur un bouton du menu : le bouton d'abord
     if (MATCH.state === 'menu') {
       if (UI.screen === 'multi' && netInLobby() && !UI.busy) { e.preventDefault(); const L = LM.scr.multi; if (!netChatOpen()) lmOpen(L, 'chat'); CHAT.unread = 0; $('netChatIn').focus({ preventScroll: true }); }
     } else if (NET.on && (MATCH.state === 'playing' || MATCH.state === 'killcam')) { e.preventDefault(); chatOpen(); }

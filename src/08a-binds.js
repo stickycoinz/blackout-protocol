@@ -16,7 +16,8 @@ const BIND_DEFS = [
   ['knife', 'KeyF', _t('Couteau (maintenir pour le garder en main)')], ['nade', 'KeyG', _t('Grenade (maintenir pour la garder en main)')], ['use', 'KeyE', _t('Ramasser l\u0027arme au sol')], ['inspect', 'KeyI', _t('Inspecter l\u0027arme')],
   ['ks1', 'Digit4', _t('Première série')], ['ks2', 'Digit5', _t('Deuxième série')], ['ks3', 'Digit6', _t('Troisième série')], ['board', 'Tab', _t('Tableau des scores')],
 ];
-const BIND_RESERVED = new Set(['Escape', 'KeyP', 'KeyT', 'Enter', 'NumpadEnter', 'MetaLeft', 'MetaRight', 'ContextMenu', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
+const BIND_RESERVED = new Set(['Escape', 'KeyP', 'Enter', // T n'est plus réservé : la discussion a sa propre touche (BLACKOUT, Entrée par défaut)
+  'NumpadEnter', 'MetaLeft', 'MetaRight', 'ContextMenu', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
 const BIND = { rev: new Map(), dead: new Set(), layout: null, capture: null };
 const bindDefault = (a) => BIND_DEFS.find((d) => d[0] === a)[1];
 const bindValid = (c) => typeof c === 'string' && /^[A-Za-z0-9]{1,20}$/.test(c) && !BIND_RESERVED.has(c) && !/^F\d{1,2}$/.test(c);
