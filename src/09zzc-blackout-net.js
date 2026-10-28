@@ -208,7 +208,7 @@
 
   /* ---------- spy moves: roll, takedown, climb, stagger, hack kneel, cloak ---------- */
   function animOf(e) {
-    const f = (e.boRollT > 0 ? 1 : 0) | (e.boTakedownT > 0 ? 2 : 0) | (e.boInteract ? 4 : 0) | (e.boStagT > 0 ? 8 : 0) | (e.boCloakOn ? 16 : 0) | (e.boClimb ? 32 : 0);
+    const f = (e.boRollT > 0 ? 1 : 0) | (e.boTakedownT > 0 ? 2 : 0) | (e.boInteract ? 4 : 0) | (e.boStagT > 0 ? 8 : 0) | (e.boCloakOn ? 16 : 0) | (e.boClimb ? 32 : 0) | (e.boTorch ? 64 : 0);
     return [netIdOf(e), f, e.boAnim ? String(e.boAnim).slice(0, 24) : '', e.boAnimT != null ? Math.round(e.boAnimT * 100) : -1, Math.round((e.boArmsUp || 0) * 100)];
   }
   const lastA = new Map(); let aAt = 0;
@@ -240,6 +240,7 @@
       if ((f & 8) && !(e.boStagT > 0)) { e.boStagT = 0.4; try { if (e.model && e.model._boKay) boKayOneShot(e.model, 'Hit_Chest', 0.4, 0.05); } catch (err) {} }
       e.boCloakNet = (f & 16) ? 1 : 0;
       e.boClimb = (f & 32) ? (e.boClimb || { net: true }) : null;
+      e.boTorch = !!(f & 64); // pass 19: the pistol light
       e.boAnim = typeof a[2] === 'string' && a[2] ? a[2] : null;
       e.boAnimT = typeof a[3] === 'number' && a[3] >= 0 ? a[3] / 100 : null;
       e.boArmsUp = typeof a[4] === 'number' ? Math.max(0, Math.min(1, a[4] / 100)) : 0;

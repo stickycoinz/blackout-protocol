@@ -241,6 +241,8 @@
     return [sec('Toughness'), ...sectionFields('spy', ['spyDmg', 'stagger', 'staggerSlow']),
       sec('Sidearm: M9 + suppressor'), ...sectionFields('spy', ['gunLock', 'botGun', 'armorDmg', 'headKillM']),
       note('Merc armor: a spy pistol round to the body or limbs does the armor damage; a headshot inside the kill range kills outright, farther out it does normal M9 head damage.'),
+      sec('Pistol light'), ...sectionFields('spy', ['torchOn', 'torchI', 'torchAngle', 'torchRange', 'torchTemp', 'torchSee', 'torchBoost']),
+      note('The weapon light under the M9 barrel, toggled with the flashlight key (L by default, rebindable in Options > Controls). While it is on the spy cannot cloak and bots notice him faster; a beam in a bot\'s face makes it turn. Hot spot, spill and softness follow the merc flashlight (Lighting tab). Applies live and reaches friends through the host.'),
       sec('Smoke bomb'), ...sectionFields('spy', ['smokeN', 'smokeLife']),
       sec('Flashbang'), ...sectionFields('spy', ['flashN', 'flashStun', 'flashR']),
       sec('Throwing knife'), ...sectionFields('spy', ['knifeN', 'knifeDmg', 'knifePick']),

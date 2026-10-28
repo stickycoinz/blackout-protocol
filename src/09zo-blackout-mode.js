@@ -81,8 +81,10 @@
       const a1 = b.aw.get(e) || 0;
       if (a1 > a0) {
         const d = hyp2(e.pos.x, e.pos.z, b.pos.x, b.pos.z);
-        const k = d < 2.5 ? 1 : k0 * (e.crouch ? 0.6 : 1) * (e.sprinting ? 1.5 : 1) * (R.cloakMul ? R.cloakMul(e, b) : 1);
-        b.aw.set(e, Math.min(1, a0 + (a1 - a0) * Math.min(1, k)));
+        let k = d < 2.5 ? 1 : k0 * (e.crouch ? 0.6 : 1) * (e.sprinting ? 1.5 : 1) * (R.cloakMul ? R.cloakMul(e, b) : 1);
+        const lit = !!(window.BOSPYLIGHT && BOSPYLIGHT.on(e)); // pass 19: a lit pistol light gives the spy away
+        if (lit) k = Math.max(k, BOSPYLIGHT.see());
+        b.aw.set(e, Math.min(1, a0 + (a1 - a0) * Math.min(lit ? 3 : 1, k)));
       }
     }
   };

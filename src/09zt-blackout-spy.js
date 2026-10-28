@@ -317,7 +317,7 @@
         e.boCloakT = 0.12;
         const spd = Math.hypot(e.vel.x, e.vel.z);
         e.boLight = lightLevel(e);
-        e.boLit = e.boLight >= S.cloakDark || litByTorch(e);
+        e.boLit = e.boLight >= S.cloakDark || litByTorch(e) || !!(window.BOSPYLIGHT && BOSPYLIGHT.on(e)); // pass 19: no cloak with the pistol light on
         if (e.isRemote && e.boCloakNet != null) e.boCloakOn = !!(S.cloak && e.alive && e.boCloakNet); // pass 16: the spy's own machine decides
         else e.boCloakOn = !!(S.cloak && e.alive && e.crouch && !e.boClimb && !(e.boRollLeft > 0) && !e.boInteract && spd <= S.cloakSpeed && !e.boLit);
       }
