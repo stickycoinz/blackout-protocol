@@ -72,6 +72,10 @@
       xhair: bool(true, 'Spy crosshair'), xhairSize: num(1, 0.5, 2.5, 0.05, 'Crosshair size (x)'),
       gunLock: bool(true, 'Spy sidearm locked to M9 + suppressor'), botGun: bool(true, 'Spy bots carry the M9 too'),
       armorDmg: num(2, 0, 100, 1, 'Merc body armor damage'), headKillM: num(2, 0, 20, 0.5, 'Headshot kill range m'),
+      torchOn: bool(true, 'Pistol light: on when the spy spawns'), torchI: num(2.4, 0, 20, 0.1, 'Pistol light: intensity'),
+      torchAngle: num(13, 3, 60, 1, 'Pistol light: beam angle (deg)'), torchRange: num(20, 3, 80, 1, 'Pistol light: distance (m)'),
+      torchTemp: num(5600, 2000, 10000, 100, 'Pistol light: color temperature (K)'), torchSee: num(1.6, 1, 3, 0.05, 'Pistol light: gives the spy away to bots (x)'),
+      torchBoost: bool(true, 'Pistol light: stays bright at low exposure'),
       camDown: num(1.25, 0.3, 1.45, 0.05, 'Camera: max look down (rad)'), camUp: num(0.85, 0.2, 1.2, 0.05, 'Camera: max look up (rad)'),
     },
   };

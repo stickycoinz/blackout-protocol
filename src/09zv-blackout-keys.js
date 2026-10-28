@@ -28,6 +28,7 @@
     ['reload', 'all', 'Reload (spy: M9)', 'KeyR', 'reload'], ['w1', 'merc', 'Primary weapon', 'Digit1', 'w1'], ['w2', 'merc', 'Secondary weapon', 'Digit2', 'w2'],
     ['swap', 'merc', 'Switch weapon (also mouse wheel)', 'KeyQ', 'swap'],
     ['flash', 'merc', 'Flashlight', 'KeyL', null, 'KeyL'],
+    ['torch', 'spy', 'Pistol light (on / off)', 'KeyL', null, 'KeyL'],
     ['melee', 'merc', 'Knife (melee)', 'KeyF', 'knife'], ['nade', 'merc', 'Grenade (hold to cook)', 'KeyG', 'nade'],
     ['use', 'merc', 'Pick up a weapon', 'KeyE', 'use'], ['inspect', 'merc', 'Inspect weapon', 'KeyI', 'inspect'],
     ['hack', 'spy', 'Hack / extract (hold), takedown', 'KeyE', null, 'KeyE'],
@@ -125,12 +126,12 @@
       + kb(K('sprint')) + 'sprint &nbsp;' + kb(K('crouchT')) + 'crouch &nbsp;' + kb(K('jump')) + 'jump &nbsp;' + kb(K('board')) + 'scores &nbsp;' + kb('F9') + 'loadout &nbsp;' + (window.BOADMIN && BOADMIN.can() ? kb('F10') + 'editor &nbsp;' : '') + '<i>shoot lamps out to kill the light</i>';
     const g = (me && me.boGad) || { smoke: 0, flash: 0, knife: 0, decoy: 0 }, n = (k) => '<em' + (g[k] > 0 ? '' : ' class="z"') + '>×' + g[k] + '</em>';
     const armed = !!(window.BOCFG && BOCFG.spyArmed && BOCFG.spyArmed()), L = armed ? '' : kb(K('fire'));
-    return (armed ? kb(K('fire')) + 'fire M9 &nbsp;' + kb(K('aim')) + 'aim &nbsp;' + kb(K('reload')) + 'reload &nbsp;' : '') + kb(K('hack')) + 'hack / takedown / extract &nbsp;' + kb(K('takedown')) + L + 'takedown &nbsp;' + kb(K('roll')) + 'roll (i-frames)<br>'
+    return (armed ? kb(K('fire')) + 'fire M9 &nbsp;' + kb(K('aim')) + 'aim &nbsp;' + kb(K('reload')) + 'reload &nbsp;' + kb(K('torch')) + 'pistol light &nbsp;' : '') + kb(K('hack')) + 'hack / takedown / extract &nbsp;' + kb(K('takedown')) + L + 'takedown &nbsp;' + kb(K('roll')) + 'roll (i-frames)<br>'
       + kb(K('smoke')) + 'smoke ' + n('smoke') + ' &nbsp;' + kb(K('flashbang')) + 'flashbang ' + n('flash') + ' &nbsp;' + kb(K('tknife')) + L + 'knife ' + n('knife') + ' &nbsp;' + kb(K('decoy')) + 'decoy ' + n('decoy') + '<br>'
       + kb(K('jump')) + 'climb / hang &nbsp;' + kb(K('crouchT')) + kb(K('crouch')) + 'crouch (cloak in shadow) &nbsp;' + kb(K('sprint')) + 'sprint &nbsp;' + kb(K('board')) + 'scores &nbsp;' + kb('F9') + 'loadout' + (window.BOADMIN && BOADMIN.can() ? ' &nbsp;' + kb('F10') + 'editor' : '');
   };
 
-  /* the merc flashlight listener (06za) reads BOKEYS.code('flash') */
+  /* the merc flashlight listener (06za) reads BOKEYS.code('flash'); the spy pistol light (09zze) reads BOKEYS.code('torch') */
 
   /* ---------- Options > Controls: the BLACKOUT layout ---------- */
   const CAP = { id: null, draws: new Set(), note: null };
