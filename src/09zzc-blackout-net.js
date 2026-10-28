@@ -100,25 +100,61 @@
   R.alarmHack = function (t) { if (t) t.netAt = performance.now(); return _ah ? _ah.apply(this, arguments) : undefined; };
 
   /* ---------- host: client hacks and extract requests ---------- */
+  function hackLen() {
+    const g = GM(), t = R.hackTime != null ? R.hackTime : g.hackTime;
+    return Math.max(0.3, +t || 4.5);
+  }
+  /* same reach as terminalNear (pedestal or panel), plus a little lag past the 1.6 m use range */
+  function spyAtTerm(e, t) {
+    if (!e || !e.pos || !t) return false;
+    const px = t.px != null ? t.px : t.x, pz = t.pz != null ? t.pz : t.z;
+    const d = Math.min(Math.hypot(e.pos.x - t.x, e.pos.z - t.z), Math.hypot(e.pos.x - px, e.pos.z - pz) - 0.35);
+    return d < 2;
+  }
+  function hackNote(id, prog, done) {
+    try { if (window.BOHACK) BOHACK.net[id] = { prog, at: performance.now(), done: !!done }; } catch (err) {}
+  }
+  /* The guest's done flag is ignored. Progress is how long this living spy has actually stood at this terminal. */
   function hackIn(c, m) {
-    if (!Array.isArray(m.l)) return;
+    const out = [];
+    if (!Array.isArray(m.l) || !bo() || MATCH.state !== 'playing') return out;
     const who = NET.remotes.get(c.peer) || null;
+    const living = !!(who && who.alive && !who.off && who.team === SPY);
+    const now = MATCH.time || 0, ht = hackLen();
     for (const x of m.l.slice(0, 8)) {
       if (!Array.isArray(x)) continue;
       const t = R.terminals.find((q) => q.id === String(x[0]).slice(0, 4)); if (!t || t.hacked) continue;
-      const p = Math.max(0, Math.min(1, +x[1] || 0));
+      if (!living || !spyAtTerm(who, t)) {
+        if (t._boHackWho === c.peer) { t._boHackT = null; t._boHackWho = null; t._boHackSeen = null; }
+        continue;
+      }
+      if (t._boHackWho !== c.peer || t._boHackT == null || now - (t._boHackSeen || 0) > 1.2) {
+        t._boHackWho = c.peer; t._boHackT = now - Math.min(0.45, ht * 0.1);
+      }
+      t._boHackSeen = now;
+      const earned = Math.max(0, Math.min(1, (now - t._boHackT) / ht));
+      const reported = Math.max(0, Math.min(1, +x[1] || 0));
+      // the done flag cannot finish a hack; a full report only counts once the host has watched almost the whole channel time
+      let p = Math.min(earned, reported);
+      if (reported >= 1 && earned >= 0.9) p = 1;
       if (p > t.prog) t.prog = p;
-      if (x[2]) {
+      const row = [t.id, Math.round(t.prog * 100) / 100, 0];
+      if (t.prog >= 1) {
         const wasOpen = R.extractOpen();
-        t.hacked = true; t.prog = 1; t.by = null;
-        lg('client hack ' + t.id + ' by ' + (who ? who.name : c.peer));
+        t.hacked = true; t.prog = 1; t.by = null; row[1] = 1; row[2] = 1;
+        t._boHackT = null; t._boHackWho = null; t._boHackSeen = null;
+        lg('client hack ' + t.id + ' by ' + who.name);
         try { hudMsg('TERMINAL ' + t.id + ' HACKED (' + R.hackedCount() + '/' + R.hackNeed + ')', PL.ent.team === SPY ? 'xp' : 'enemy', 3); } catch (e) {}
         try { if (window.BO_TERM_FX) BO_TERM_FX(t); } catch (e) {}
         try { if (R.alarmHack) R.alarmHack(t, who); } catch (e) {}
         if (!wasOpen && R.extractOpen()) openFx();
         lastSig = '';
       }
+      hackNote(t.id, row[1], row[2]);
+      out.push(row);
     }
+    if (out.length) try { netBroadcast({ t: 'bohk', l: out }, true, c.peer); } catch (err) {}
+    return out;
   }
   function extractIn(c, m) {
     cnt(N.got, 'boxt');
@@ -131,7 +167,7 @@
     else if (!R.extractOpen()) why = 'HOST COUNTS ' + R.hackedCount() + '/' + R.hackNeed + ' HACKS';
     else {
       const X = R.extractPt ? R.extractPt() : { x: 0, z: 0, r: 2.2 };
-      const d = Math.min(Math.hypot(e.pos.x - X.x, e.pos.z - X.z), Math.hypot((+m.x || 0) - X.x, (+m.z || 0) - X.z) + 1.5);
+      const d = Math.hypot(e.pos.x - X.x, e.pos.z - X.z);
       if (d > X.r + 3) why = 'NOT IN THE EXTRACT RING';
     }
     if (R.roundOver) return;
@@ -198,6 +234,8 @@
         }
         if (ev.k === 'nade') {
           cnt(N.got, 'ev_' + ev.ty);
+          if (!e) return;
+          if (!e.net) e.net = { nadeW: { t: -9, n: 0 } };
           if (e.team === SPY && ev.ty === 'smoke') { const S = (BOCFG.v && BOCFG.v.spy) || {}; if (S.smokeLife) SMOKE.life = S.smokeLife; }
           if (e.team === SPY && e.model && e.model._boKay) { e.boThrowT = 0.4; try { boKayOneShot(e.model, 'Punch_Jab', 0.42, 0.05); } catch (err) {} }
         }
@@ -228,11 +266,12 @@
   }
   function animIn(m, from) {
     cnt(N.got, 'boa');
-    if (!Array.isArray(m.l)) return;
+    const acc = [];
+    if (!Array.isArray(m.l)) return acc;
     for (const a of m.l.slice(0, 12)) {
       if (!Array.isArray(a) || typeof a[0] !== 'string') continue;
       const e = netEntity(a[0]); if (!e || !e.isRemote) continue;
-      if (from && e.peer !== from && !(e.remoteBot)) continue; // a client speaks only for himself
+      if (from && e.peer !== from) continue; // a client speaks only for himself, never for a bot or another spy
       const f = a[1] | 0;
       if (f & 1) { if (!(e.boRollT > 0)) { e.boRollT = 0.6; e.boRollAt = MATCH.time; } } else e.boRollT = 0;
       if (f & 2) { if (!(e.boTakedownT > 0)) e.boTakedownT = 0.7; }
@@ -241,10 +280,12 @@
       e.boCloakNet = (f & 16) ? 1 : 0;
       e.boClimb = (f & 32) ? (e.boClimb || { net: true }) : null;
       e.boTorch = !!(f & 64); // pass 19: the pistol light
-      e.boAnim = typeof a[2] === 'string' && a[2] ? a[2] : null;
+      e.boAnim = typeof a[2] === 'string' && a[2] ? a[2].slice(0, 24) : null;
       e.boAnimT = typeof a[3] === 'number' && a[3] >= 0 ? a[3] / 100 : null;
       e.boArmsUp = typeof a[4] === 'number' ? Math.max(0, Math.min(1, a[4] / 100)) : 0;
+      acc.push([netIdOf(e), f, e.boAnim || '', e.boAnimT != null ? Math.round(e.boAnimT * 100) : -1, Math.round((e.boArmsUp || 0) * 100)]);
     }
+    return acc;
   }
 
   /* ---------- remote bodies: spies wear the UAL body on every screen ---------- */
@@ -276,16 +317,51 @@
   };
 
   /* ---------- messages ---------- */
+  if (typeof netApply === 'function') {
+    const _na = netApply;
+    netApply = function (id, P) {
+      const r = _na.apply(this, arguments);
+      try {
+        if (typeof boIsBlackout !== 'function' || !boIsBlackout()) return r;
+        if (!P || !Array.isArray(P.s) || P.s.length < 12) return r;
+        const e = NET.remotes.get(id); if (!e) return r;
+        e.health = clamp(numOr(P.s[11]), 0, 1000);
+      } catch (err) {}
+      return r;
+    };
+  }
   if (typeof netHostMsg === 'function') {
     const _hm = netHostMsg;
     netHostMsg = function (c, m) {
       if (m && NET.role === 'host' && typeof m.t === 'string' && m.t.startsWith('bo')) {
         const pl = NET.players.get(c.peer);
-        if (pl && pl.conn === c) {
-          if (m.t === 'boxt') { extractIn(c, m); return; }
-          if (m.t === 'boa') { animIn(m, c.peer); try { netBroadcast(m, true, c.peer); } catch (err) {} return; }
-          if (m.t === 'bors') { cnt(N.got, 'bors'); const e = NET.remotes.get(c.peer); if (e && !e.alive) e.boRespAt = m.w ? MATCH.time + Math.max(1, GM().respawnDelay || 5) + 4 : null; return; }
-          if (m.t === 'bohk' && bo()) { cnt(N.got, 'bohk'); try { hackIn(c, m); } catch (err) { console.warn('BO hack in', err); } }
+        if (!pl || pl.conn !== c) return;
+        // same 180/s window as position states, so a bo* flood cannot skip the host limit
+        const now = performance.now(), r = pl.rate || (pl.rate = { t: now, p: 0, o: 0 });
+        if (now - r.t >= 1000) { r.t = now; r.p = 0; r.o = 0; }
+        if (++r.p > 180) return;
+        if (m.t === 'boxt') { extractIn(c, m); return; }
+        if (m.t === 'boa') {
+          const acc = animIn(m, c.peer);
+          if (acc.length) try { netBroadcast({ t: 'boa', l: acc }, true, c.peer); } catch (err) {}
+          return;
+        }
+        if (m.t === 'bors') {
+          cnt(N.got, 'bors');
+          const e = NET.remotes.get(c.peer);
+          if (e && !e.alive) {
+            const g = GM();
+            const livesOk = e.team !== SPY || !g.spyLives || (e.boDeaths || 0) < g.spyLives;
+            if (m.w && g.respawn && livesOk) {
+              if (e.boRespAt == null) e.boRespAt = MATCH.time + Math.max(1, g.respawnDelay || 5) + 4;
+            } else e.boRespAt = null;
+          }
+          return;
+        }
+        if (m.t === 'bohk') {
+          cnt(N.got, 'bohk');
+          try { hackIn(c, m); } catch (err) { console.warn('BO hack in', err); }
+          return;
         }
       }
       return _hm.apply(this, arguments);
