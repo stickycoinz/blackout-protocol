@@ -34,7 +34,7 @@ const BO = window.BO = {
   } catch (e) {}
 })();
 
-function boIsBlackout() { return !!(typeof CURMAP !== 'undefined' && CURMAP && CURMAP.id === 'blackout'); }
+function boIsBlackout() { return !!(typeof CURMAP !== 'undefined' && CURMAP && boMapOn(CURMAP.id)); }
 /* the spy role only exists in a BLACKOUT match: a role saved in localStorage must not leak into normal Riposte matches */
 function boIsSpy() { return BO.role === 'spy' && boIsBlackout(); }
 

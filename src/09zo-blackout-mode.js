@@ -17,7 +17,7 @@
     active: false, terminals: [], roundOver: false, winner: -1, reason: '', kicker: '', extractProg: 0,
     takedowns: 0, log: [], hackNeed: 2, hackTime: 4.5, prevKeys: {}, clickT: 0, rollCd: 0,
   };
-  const boOn = () => typeof CURMAP !== 'undefined' && CURMAP && CURMAP.id === 'blackout';
+  const boOn = () => typeof CURMAP !== 'undefined' && CURMAP && boMapOn(CURMAP.id);
   R.on = boOn;
   const spyRole = () => typeof BO !== 'undefined' && BO.role === 'spy';
   const log = (s) => { R.log.push(((typeof MATCH !== 'undefined' && MATCH.time) || 0).toFixed(1) + ' ' + s); if (R.log.length > 200) R.log.shift(); };
@@ -123,9 +123,14 @@
   function placeAt(e, team, i) {
     const l = spawnList(team), p = l[i % l.length], ring = Math.floor(i / l.length);
     const x = p[0] + ring * 1.3, z = p[1];
-    e.pos.set(x, groundHeight(x, z, 4, 0.3), z);
+    // pass 17: the floor comes from the nav graph like Riposte's own spawns (spawnSpot), so raised islands (Stratus) and dunes (Simoun) work
+    let sp = null;
+    try { if (typeof spawnSpot === 'function' && typeof NAV !== 'undefined' && NAV.nx && NAV.nx.length) sp = spawnSpot(e, x, z, null); } catch (err) { sp = null; }
+    if (sp && Math.hypot(sp.x - x, sp.z - z) < 4) e.pos.copy(sp); else e.pos.set(x, groundHeight(x, z, (typeof gy0 === 'function' ? gy0(x, z) : 0) + 4, 0.3), z);
     e.vel.set(0, 0, 0); e.vy = 0;
-    const yaw = team === SPY ? Math.PI : 0; // spies start at -Z looking into town (+Z), mercs at +Z looking -Z
+    // face the middle of the map (Khamsin: straight down Main Street, as before)
+    const dm = CURMAP.def && CURMAP.def.dom && CURMAP.def.dom[1], tx = dm ? dm[0] : 0, tz = dm ? dm[1] : 0;
+    const yaw = CURMAP.id === 'blackout' ? (team === SPY ? Math.PI : 0) : Math.atan2(e.pos.x - tx, e.pos.z - tz);
     e.yaw = yaw; if (e.lookYaw !== undefined) e.lookYaw = yaw;
     if (e.isPlayer) { PL.yaw = yaw; PL.pitch = 0; }
   }

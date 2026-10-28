@@ -1,3 +1,5 @@
+/* pass 17: a BLACKOUT map id is 'blackout' (Khamsin night) or 'bo_<riposte id>' (the other night maps, 02zb-blackout-nights.js) */
+function boMapOn(id) { return id === 'blackout' || (typeof id === 'string' && id.slice(0, 3) === 'bo_'); }
 /* BLACKOUT facility — Riposte MAP_DEFS, concrete/slate/teal (red accents only) */
 const ATMO_BLACKOUT = Object.assign({}, ATMO_DEFAULT, {
   /* Dark facility night — low ambient, readable silhouettes, merc flashlight carries the room */
@@ -355,7 +357,7 @@ MAP_DEFS.blackout = Object.assign(Object.create(MAP_DEFS.sable), {
   unload() { try { if (typeof boLightsArm === 'function') boLightsArm(false); } catch (e) {} if (MAP_DEFS.sable.unload) MAP_DEFS.sable.unload(); },
 });
 
-MAPS.push({ id: 'blackout', name: 'BLACKOUT', tag: 'Khamsin · night ops', ok: true,
+MAPS.push({ id: 'blackout', name: 'Khamsin Night', tag: 'Khamsin · night ops', ok: true, boBase: 'sable',
   desc: 'Khamsin after dark. Spies hack 2 of 3 terminals. Mercs hunt with flashlights.' });
 var BO_SPY_SPAWNS = BO_KH_SPY.map((p) => p.slice());
 var BO_MERC_SPAWNS = BO_KH_MERC.map((p) => p.slice());

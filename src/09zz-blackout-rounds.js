@@ -309,14 +309,14 @@
     const _lm = netLobbyMsg;
     netLobbyMsg = function () {
       const m = _lm.apply(this, arguments);
-      try { if (m && (NET.cfg.map === 'blackout')) m.bo = { game: BOCFG.v.game, fd: BOCFG.v.light && BOCFG.v.light.flashDrain }; } catch (err) {}
+      try { if (m && boMapOn(NET.cfg.map)) m.bo = { game: BOCFG.v.game, fd: BOCFG.v.light && BOCFG.v.light.flashDrain }; } catch (err) {}
       return m;
     };
   }
 
   /* ---------- match settings (Solo setup page and the online room) ---------- */
   const menuMap = () => { try { return (typeof NET !== 'undefined' && NET.role && NET.role !== 'off' && NET.cfg) ? NET.cfg.map : Settings.map; } catch (err) { return ''; } };
-  const boMenu = () => menuMap() === 'blackout';
+  const boMenu = () => boMapOn(menuMap());
   const seg = (key, label, list, cur, fmt, setter, dis, extra) => {
     const items = list.map((v) => (Array.isArray(v) ? v : [v, fmt(v)]));
     if (!items.some(([v]) => +v === +cur)) { items.push([cur, fmt(cur)]); items.sort((a, b) => a[0] - b[0]); }
@@ -339,6 +339,7 @@
       seg('spies', 'Spies', [1, 2, 3, 4, 5, 6], Math.round(g.spies), String, put('spies'), dis),
       { k: 'note', cls: 'hint', text: o.online ? 'Team sizes include players; bots fill the empty slots when bots are on.' : 'Team sizes include you; bots fill the rest.' },
       { k: 'seg', full: true, wide: o.online, key: 'bots', label: o.online ? 'Bots' : 'Bot difficulty', items: o.online ? [['off', 'None'], ...diffs] : diffs, get: () => (o.online && !o.bots ? 'off' : o.diff), set: (v) => o.set('bots', v), disabled: dis },
+      ...(DIFF[o.diff] && DIFF[o.diff].custom ? [{ k: 'note', cls: 'hint', text: 'Custom bots: reaction ' + Math.round(g.aiReact) + ', aim ' + Math.round(g.aiAim) + ', hearing ' + Math.round(g.aiHear) + ', aggression ' + Math.round(g.aiAgg) + ' (0 = Recruit, 100 = Nightmare). Change them in the BLACKOUT editor, Game tab.' }] : (o.diff >= 3 && DIFF_HINT[o.diff] ? [{ k: 'note', cls: 'hint', text: DIFF_HINT[o.diff] }] : [])),
       seg('respawn', 'Respawn', [[0, 'Off · one life'], [1, 'On']], g.respawn ? 1 : 0, String, (v) => put('respawn')(!!v), dis, { wide: true }));
     if (g.respawn) rows.push(
       seg('respawnDelay', 'Respawn delay', [3, 5, 8, 10, 15, 20], Math.round(g.respawnDelay), (v) => v + ' s', put('respawnDelay'), dis),
@@ -351,14 +352,19 @@
     if (o.pubOk) rows.push({ k: 'seg', full: true, key: 'pub', label: 'Room', items: [[0, 'Private'], [1, 'Public']], get: () => (o.pub ? 1 : 0), set: (v) => o.set('pub', v), disabled: dis });
     return rows;
   }
+  // pass 17: the map picker lists the BLACKOUT night maps only (and the plain Riposte maps only outside BLACKOUT)
+  if (typeof mapCards === 'function') {
+    const _mc = mapCards;
+    mapCards = function (selId) { const r = _mc.apply(this, arguments); const bo = boMapOn(selId); return r.filter((c) => boMapOn(c.key) === bo); };
+  }
   if (typeof matchRows === 'function') {
     const _mr = matchRows;
-    matchRows = function (o) { return o && o.map === 'blackout' ? boMatchRows(o) : _mr.apply(this, arguments); };
+    matchRows = function (o) { return o && boMapOn(o.map) ? boMatchRows(o) : _mr.apply(this, arguments); };
   }
   if (typeof mapPreview === 'function') {
     const _mp = mapPreview;
     mapPreview = function (m, o) {
-      if (!o || o.map !== 'blackout') return _mp.apply(this, arguments);
+      if (!o || !boMapOn(o.map)) return _mp.apply(this, arguments);
       const g = GM(), art = m.ok && MAP_ART[m.id];
       return (art ? `<img class="mapart" alt="" decoding="async" src="${art}">` : '<span class="mapart none"></span>')
         + `<div class="pv-t"><b>${esc(m.name)}</b><span class="pv-m">BLACKOUT · Spies vs Mercs</span><span class="pv-i">${esc('First to ' + rtw() + ' · ' + fmtMin(Math.round(g.roundTime)) + ' rounds · ' + Math.round(g.mercs) + ' v ' + Math.round(g.spies) + ' · ' + (g.respawn ? 'respawn ' + Math.round(g.respawnDelay) + ' s' : '1 life'))}</span></div>`;
@@ -367,7 +373,7 @@
   if (typeof soloStage === 'function') {
     const _ss = soloStage;
     soloStage = function () {
-      if (Settings.map !== 'blackout') return _ss.apply(this, arguments);
+      if (!boMapOn(Settings.map)) return _ss.apply(this, arguments);
       const g = GM(), me = lobbyMe([]), mine = (typeof BO !== 'undefined' && BO.role === 'spy') ? SPY : MERC;
       const N = { [MERC]: ['Hammer', 'Unit1', 'Unit2', 'Unit3', 'Unit4', 'Unit5'], [SPY]: ['Ghost', 'Shade1', 'Shade2', 'Shade3', 'Shade4', 'Shade5'] };
       const col = (t) => {
@@ -383,7 +389,7 @@
     const _sp = SOLO_PAGES.solo;
     SOLO_PAGES.solo = function () {
       const p = _sp.apply(this, arguments);
-      if (Settings.map === 'blackout' && p) { p.rows = p.rows.filter((r) => r.key !== 'map'); p.title = 'Solo vs bots'; p.sub = 'BLACKOUT · Spies vs Mercs'; const s = p.rows.find((r) => r.key === 'setup'); if (s) s.label = 'Match settings'; }
+      if (boMapOn(Settings.map) && p) { p.title = 'Solo vs bots'; p.sub = 'BLACKOUT · Spies vs Mercs'; const s = p.rows.find((r) => r.key === 'setup'); if (s) s.label = 'Match settings'; }
       return p;
     };
   }
@@ -391,7 +397,7 @@
     const _lp = NET_PAGES.lobby;
     NET_PAGES.lobby = function () {
       const p = _lp.apply(this, arguments);
-      try { if (NET.cfg.map === 'blackout' && p) { p.sub = 'BLACKOUT · Spies vs Mercs'; const s = p.rows.find((r) => r.key === 'setup'); if (s) s.label = 'Match settings'; } } catch (err) {}
+      try { if (boMapOn(NET.cfg.map) && p) { p.sub = 'BLACKOUT · Spies vs Mercs'; const s = p.rows.find((r) => r.key === 'setup'); if (s) s.label = 'Match settings'; } } catch (err) {}
       return p;
     };
   }
@@ -416,6 +422,11 @@
       const r = _pr.apply(this, arguments);
       try {
         const row = document.querySelector('#playGrid .play-card.solo'); const par = row && row.parentNode;
+        if (par) {
+          const mi = mapById(boMapOn(Settings.map) ? Settings.map : 'blackout');
+          if (!par.querySelector('[data-play="bomap"]')) par.insertAdjacentHTML('beforeend', '<button class="play-card bomap" type="button" data-play="bomap"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14"/></svg><b>MAP</b><span></span></button>');
+          const sp = par.querySelector('[data-play="bomap"] span'); if (sp) sp.textContent = mi.name + ' · ' + (mi.tag || '') + '. Pick any night map.';
+        }
         if (par && !par.querySelector('[data-play="soloset"]')) {
           const g = GM();
           par.insertAdjacentHTML('beforeend', '<button class="play-card soloset" type="button" data-play="soloset"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.4 13a7.5 7.5 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7 7 0 0 0-1.7-1L15 3h-4l-.4 2.7a7 7 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.5 7.5 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7 7 0 0 0 1.7 1L11 21h4l.4-2.7a7 7 0 0 0 1.7-1l2.5 1 2-3.5ZM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z"/></svg><b>MATCH SETTINGS</b><span>'
@@ -425,9 +436,15 @@
       return r;
     };
     playPick = function (k) {
+      if (k === 'bomap') {
+        try { sfxUi('click'); } catch (e) {}
+        if (!boMapOn(Settings.map)) Settings.map = 'blackout';
+        uiGo('solo'); setTimeout(() => { try { lmPush(LM.scr.solo, 'map'); } catch (e) {} }, 30);
+        return;
+      }
       if (k === 'soloset') {
         try { sfxUi('click'); } catch (e) {}
-        Settings.map = 'blackout';
+        if (!boMapOn(Settings.map)) Settings.map = 'blackout';
         uiGo('solo'); setTimeout(() => { try { lmPush(LM.scr.solo, 'setup'); } catch (e) {} }, 30);
         return;
       }

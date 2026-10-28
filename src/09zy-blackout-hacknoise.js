@@ -17,7 +17,7 @@
   const A = window.BOHACK = { net: {}, beeps: 0, stings: 0, lured: 0, log: [], st: {} };
   const log = (m) => { A.log.push((MATCH.time || 0).toFixed(1) + ' ' + m); if (A.log.length > 60) A.log.shift(); };
   const V = THREE.Vector3;
-  const range = () => Math.max(1, +GM().hackNoiseM || 35);
+  const range = () => Math.max(1, +GM().hackNoiseM || 35) * ((typeof botDiff === 'function' && botDiff().hear) || 1); // pass 17: harder bots hear further
   const vol = () => Math.max(0, GM().hackNoiseVol != null ? +GM().hackNoiseVol : 1);
   const mode = () => GM().hackAlert || 'hearing';
 

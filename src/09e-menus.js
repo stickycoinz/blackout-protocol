@@ -9,7 +9,9 @@ const UI = { screen: 'main', stack: [], busy: false, flow: null, timer: 0, pm: '
 /* Un changement de classe est appliqué tout de suite si le joueur vient d'apparaître (secondes) ; sinon à la réapparition */
 const CLASS_GRACE = 5;
 const DEPLOY_AUTO = 30; // en ligne, déploiement automatique au bout de ce délai (secondes)
-const DIFF_HINT = [_t('Réactions lentes et tirs imprécis, pour prendre ses marques.'), _t('Un adversaire honnête, qui vise et réagit comme un joueur moyen.'), _t('Réactions vives et tirs précis. Ils sautent, glissent et contournent comme de vrais joueurs.')];
+const DIFF_HINT = [_t('Réactions lentes et tirs imprécis, pour prendre ses marques.'), _t('Un adversaire honnête, qui vise et réagit comme un joueur moyen.'), _t('Réactions vives et tirs précis. Ils sautent, glissent et contournent comme de vrais joueurs.'),
+  'Faster reactions, tighter aim, longer memory, they hear you from further away.', 'Near instant reactions, frequent headshots, relentless chasing and sharp hearing.',
+  'Instant reactions, surgical aim, 2x hearing, they never stop hunting. Good luck.', 'Your own mix: set reaction, aim, hearing and aggression in the BLACKOUT editor (F10, Game tab).'];
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 const uiWait = (ms) => new Promise((r) => setTimeout(r, ms));
 const cls = (i) => CLASSES[i] || CLASSES[0];

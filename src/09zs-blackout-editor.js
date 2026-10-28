@@ -229,6 +229,10 @@
       note('A terminal being hacked beeps faster and higher as it fills. Merc bots inside the range go check it. Merc alert marker: hearing = only mercs inside the range get the alert, always = every merc, off = none. A finished hack is heard map-wide.'),
       sec('Spy roll'), ...sectionFields('game', ['rollIFrames', 'rollCd', 'rollDist']),
       sec('Bots'), ...sectionFields('game', ['mercs', 'spies']),
+      sec('Bot difficulty'),
+      field({ t: 's', opts: BOAI.names(), label: 'Bot level' }, () => BOAI.names()[BOAI.curLevel()] || '', (v) => { const i = BOAI.names().indexOf(v); return BOAI.names()[BOAI.setLevel(i < 0 ? 2 : i)]; }),
+      ...sectionFields('game', ['aiReact', 'aiAim', 'aiHear', 'aiAgg']),
+      note('Hard, Elite and Nightmare are fixed presets above Veteran. Custom uses the four sliders: 0 plays like Recruit, 100 like Nightmare. Reaction = how fast they spot and turn; aim = accuracy, headshots and damage; hearing = how far shots, steps and hacks carry to them (0.6x to 2.5x); aggression = how far they chase, how long they remember you, grenades. The host runs the bots, so friends always play against the host level and sliders.'),
       note('Round rules, health and team sizes apply when the next round starts. Speeds apply live.'),
       el('div', { class: 'btns' }, btn('Restart round now', () => { try { if (MATCH.state === 'playing' && !(typeof NET !== 'undefined' && NET.role === 'client')) { close(); startMatch(); } else toast('Start a BLACKOUT match first'); } catch (e) { toast(e.message); } }, 'pri'),
         btn('Reset gameplay', () => { BOCFG.resetSection('game'); render(); toast('Gameplay reset'); }, 'dng'))];

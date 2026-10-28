@@ -54,6 +54,9 @@
       roundsToWin: num(2, 1, 9, 1, 'Rounds to win'), respawn: bool(false, 'Respawn (off = one life per round)'), respawnDelay: num(5, 1, 60, 1, 'Respawn delay (s)'),
       spyLives: num(0, 0, 20, 1, 'Spy lives per round (0 = unlimited)'), specDelay: num(3, 0, 15, 0.5, 'Death cam before spectating (s)'), intermission: num(6, 2, 30, 1, 'Pause between rounds (s)'),
       mercs: num(2, 1, 6, 1, 'Mercs (incl. player)'), spies: num(2, 1, 6, 1, 'Spies (incl. player)'),
+      // pass 17: the Custom bot difficulty (0 = Recruit, 100 = Nightmare)
+      aiReact: num(60, 0, 100, 1, 'Custom bots: reaction'), aiAim: num(60, 0, 100, 1, 'Custom bots: aim'),
+      aiHear: num(60, 0, 100, 1, 'Custom bots: hearing'), aiAgg: num(60, 0, 100, 1, 'Custom bots: aggression'),
       rollIFrames: num(0.35, 0, 0.6, 0.01, 'Roll i-frames (s, roll lasts 0.6)'), rollCd: num(1.1, 0.6, 6, 0.05, 'Roll cooldown (s)'), rollDist: num(3.1, 1, 8, 0.1, 'Roll distance (m)'),
     },
     spy: { // pass 8: spy kit
@@ -271,7 +274,7 @@
   /* ---------- lighting ---------- */
   const _c = new THREE.Color();
   function applyLight() {
-    if (typeof CURMAP === 'undefined' || !CURMAP || CURMAP.id !== 'blackout' || !CURMAP.def) return;
+    if (typeof CURMAP === 'undefined' || !CURMAP || !boMapOn(CURMAP.id) || !CURMAP.def) return;
     const L = BOCFG.v.light;
     try { FinalShader.uniforms.uExposure.value = L.exposure * (GRADE_DEF.gain || 1); } catch (e) {}
     try { hemi.intensity = L.ambient; } catch (e) {}
