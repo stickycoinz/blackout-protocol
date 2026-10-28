@@ -182,6 +182,8 @@
   function tGame() {
     return [sec('Round'), ...sectionFields('game', ['roundTime', 'hackTime', 'hacksNeeded', 'extractTime', 'takedownRange']),
       sec('Players'), ...sectionFields('game', ['health', 'spySpeed', 'mercSpeed', 'spyStealth', 'botHack', 'botDelay']),
+      sec('Terminal hack noise'), ...sectionFields('game', ['hackNoiseM', 'hackNoiseVol', 'hackAlert']),
+      note('A terminal being hacked beeps faster and higher as it fills. Merc bots inside the range go check it. Merc alert marker: hearing = only mercs inside the range get the alert, always = every merc, off = none. A finished hack is heard map-wide.'),
       sec('Spy roll'), ...sectionFields('game', ['rollIFrames', 'rollCd', 'rollDist']),
       sec('Bots'), ...sectionFields('game', ['mercs', 'spies']),
       note('Round rules, health and team sizes apply when the next round starts. Speeds apply live.'),

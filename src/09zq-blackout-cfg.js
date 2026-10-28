@@ -43,6 +43,8 @@
       spyStealth: num(0.55, 0.05, 1, 0.05, 'Spy visibility to merc bots (x)'),
       botHack: num(0.35, 0.1, 2, 0.05, 'Spy bot hack speed (x player)'),
       botDelay: num(12, 0, 60, 1, 'Spy bots wait before first hack (s)'),
+      hackNoiseM: num(35, 5, 150, 1, 'Hack noise range m'), hackNoiseVol: num(1, 0, 3, 0.05, 'Hack noise volume'),
+      hackAlert: sel('hearing', ['hearing', 'always', 'off'], 'Merc alert marker'),
       mercs: num(2, 1, 6, 1, 'Mercs (incl. player)'), spies: num(2, 1, 6, 1, 'Spies (incl. player)'),
       rollIFrames: num(0.35, 0, 0.6, 0.01, 'Roll i-frames (s, roll lasts 0.6)'), rollCd: num(1.1, 0.6, 6, 0.05, 'Roll cooldown (s)'), rollDist: num(3.1, 1, 8, 0.1, 'Roll distance (m)'),
     },

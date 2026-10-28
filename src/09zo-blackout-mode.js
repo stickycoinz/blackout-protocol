@@ -339,7 +339,7 @@
     } else {
       R.extractProg = Math.max(0, R.extractProg - dt);
       if (td && (pressed('KeyE') || pressed('KeyF') || clicked)) { doTakedown(e, td); R.clickT = 0; }
-      else if (td) prompt = BK('hack') + ' / ' + BK('takedown') + ' / CLICK: TAKEDOWN ' + td.name;
+      else if (td) prompt = BK('hack') + ' / ' + BK('takedown') + (window.BOCFG && BOCFG.spyArmed && BOCFG.spyArmed() ? '' : ' / CLICK') + ': TAKEDOWN ' + td.name;
       else if (term) {
         if (holdE) {
           e.boInteract = true; term.by = e;
@@ -586,6 +586,7 @@
      a finished hack is heard by every merc. Merc bots with nothing better to do patrol the terminals still standing. */
   const _snd = (p, who, loud) => { soundEvents.push({ pos: new THREE.Vector3(p.x, 1.2, p.z), team: SPY, who, t: MATCH.time, loud: !!loud }); while (soundEvents.length > 60) soundEvents.shift(); };
   function alarmTick(dt) {
+    if (R.hackNoiseOn) return; // pass 11: 09zy owns the hack noise (sound, merc alert, bot investigation)
     for (const t of R.terminals) {
       if (t.hacked || !(t.by && t.by.alive && t.by.boInteract)) { t.alarmT = 0; continue; }
       t.alarmT = (t.alarmT || 0) - dt;
