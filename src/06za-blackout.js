@@ -55,8 +55,8 @@ const BO_UAL = {
   file: 'models/character/UAL1_Standard.glb',
   // measured in-place stride speeds (m/s at timeScale 1) - all loops start left foot forward
   nat: { Walk_Loop: 1.3, Jog_Fwd_Loop: 3.2, Sprint_Loop: 5.0, Crouch_Fwd_Loop: 0.9 },
-  loops: ['Idle_Loop', 'Walk_Loop', 'Jog_Fwd_Loop', 'Sprint_Loop', 'Crouch_Idle_Loop', 'Crouch_Fwd_Loop', 'Jump_Loop', 'Fixing_Kneeling'],
-  once: ['Jump_Start', 'Jump_Land', 'Roll', 'Interact', 'Punch_Cross', 'Death01', 'Hit_Chest'],
+  loops: ['Idle_Loop', 'Walk_Loop', 'Jog_Fwd_Loop', 'Sprint_Loop', 'Crouch_Idle_Loop', 'Crouch_Fwd_Loop', 'Jump_Loop', 'Fixing_Kneeling', 'Spell_Simple_Idle_Loop', 'Push_Loop'],
+  once: ['Jump_Start', 'Jump_Land', 'Roll', 'Interact', 'Punch_Cross', 'Death01', 'Hit_Chest', 'Hit_Head', 'Punch_Jab', 'Spell_Simple_Shoot', 'PickUp_Table'],
   // legacy names used elsewhere -> UAL clips
   alias: { Idle: 'Idle_Loop', Walk: 'Walk_Loop', Run: 'Jog_Fwd_Loop', Jump: 'Jump_Loop', Hop: 'Jump_Loop',
     Roll: 'Roll', Interact: 'Interact', Hack: 'Fixing_Kneeling', Takedown: 'Punch_Cross', Defeat: 'Death01', Hit: 'Hit_Chest' },
@@ -285,6 +285,29 @@ function boKayLocoTargets(K, e, dt) {
   return tw;
 }
 
+/* pass 8: arms raised overhead (ledge hang / climb): UAL has no climb clip, so the arm chains are turned toward
+   "up, a little forward, a little out" in world space on top of whatever clip plays, blended by k */
+const _bkA = { a: new THREE.Vector3(), b: new THREE.Vector3(), t: new THREE.Vector3(), f: new THREE.Vector3(), s: new THREE.Vector3(),
+  q: new THREE.Quaternion(), w: new THREE.Quaternion(), p: new THREE.Quaternion(), i: new THREE.Quaternion() };
+function boKayArmsUp(K, k) {
+  const X = _bkA; k = Math.min(1, k);
+  K.holder.updateMatrixWorld(true);
+  X.f.set(0, 0, 1).applyQuaternion(K.holder.quaternion); X.f.y = 0; X.f.normalize();
+  for (const sd of ['l', 'r']) {
+    for (const [bn, cn, up] of [['upperarm_' + sd, 'lowerarm_' + sd, 1], ['lowerarm_' + sd, 'hand_' + sd, 1]]) {
+      const b = K.bones[bn], c = K.bones[cn]; if (!b || !c || !b.parent) continue;
+      b.getWorldPosition(X.a); c.getWorldPosition(X.b);
+      const dir = X.b.sub(X.a); if (dir.lengthSq() < 1e-8) continue; dir.normalize();
+      X.s.copy(X.a).sub(K.holder.position); X.s.y = 0; X.s.addScaledVector(X.f, -X.s.dot(X.f)); if (X.s.lengthSq() > 1e-8) X.s.normalize();
+      X.t.set(0, up, 0).addScaledVector(X.f, 0.28).addScaledVector(X.s, 0.16).normalize();
+      X.q.setFromUnitVectors(dir, X.t); X.i.identity().slerp(X.q, k);
+      b.getWorldQuaternion(X.w); b.parent.getWorldQuaternion(X.p);
+      b.quaternion.copy(X.p.invert().multiply(X.i.multiply(X.w)));
+      b.updateMatrixWorld(true);
+    }
+  }
+}
+
 function boKayUpdate(model, e, dt, opts) {
   const K = model && model._boKay; if (!K) return;
   const yaw = (e && e.yaw != null) ? e.yaw : ((e === PL.ent) ? PL.yaw : 0);
@@ -323,7 +346,12 @@ function boKayUpdate(model, e, dt, opts) {
     os.t += dt;
     if (!os.hold && os.t >= os.len) K.oneShot = null;
   }
-  if (K.oneShot) {
+  if (e && e.alive && e.boAnim && K.actions[e.boAnim]) {
+    // pass 8: a pose driven from outside (climb / ledge hang): boAnimT (0..1) scrubs the clip, otherwise it plays
+    K.oneShot = null; tw[e.boAnim] = 1; K.legYaw *= Math.exp(-12 * dt);
+    const a = K.actions[e.boAnim];
+    if (e.boAnimT != null) { a.timeScale = 0; a.time = Math.max(0, Math.min(0.999, e.boAnimT)) * K.durs[e.boAnim]; } else if (a.timeScale === 0) a.timeScale = 1;
+  } else if (K.oneShot) {
     tw[K.oneShot.name] = 1;
     K.legYaw *= Math.exp(-8 * dt);
   } else if (e && e.alive && (e.boInteract || K.forceLoop === 'Fixing_Kneeling')) {
@@ -369,6 +397,7 @@ function boKayUpdate(model, e, dt, opts) {
       b.updateMatrixWorld(true);
     }
   }
+  if (e && e.boArmsUp > 0.01) boKayArmsUp(K, e.boArmsUp);
   boKaySyncJ(model, K);
   // camera reference height follows the real head (crouch / kneel lower the view), heavily smoothed
   const hb = K.bones.Head;

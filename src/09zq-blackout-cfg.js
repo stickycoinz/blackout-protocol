@@ -44,6 +44,18 @@
       botHack: num(0.35, 0.1, 2, 0.05, 'Spy bot hack speed (x player)'),
       botDelay: num(12, 0, 60, 1, 'Spy bots wait before first hack (s)'),
       mercs: num(2, 1, 6, 1, 'Mercs (incl. player)'), spies: num(2, 1, 6, 1, 'Spies (incl. player)'),
+      rollIFrames: num(0.35, 0, 0.6, 0.01, 'Roll i-frames (s, roll lasts 0.6)'), rollCd: num(1.1, 0.6, 6, 0.05, 'Roll cooldown (s)'), rollDist: num(3.1, 1, 8, 0.1, 'Roll distance (m)'),
+    },
+    spy: { // pass 8: spy kit
+      spyDmg: num(0.6, 0.1, 2, 0.05, 'Spy damage taken (x)'), stagger: num(0.35, 0, 1.5, 0.05, 'Hit stagger time (s)'), staggerSlow: num(0.45, 0.1, 1, 0.05, 'Move speed while staggered (x)'),
+      smokeN: num(2, 0, 9, 1, 'Smoke bombs per life'), smokeLife: num(15, 3, 40, 1, 'Smoke duration (s)'),
+      flashN: num(2, 0, 9, 1, 'Flashbangs per life'), flashStun: num(3, 0.5, 8, 0.1, 'Flashbang blind / stun (s, max)'), flashR: num(18, 4, 40, 1, 'Flashbang radius (m)'),
+      knifeN: num(3, 0, 12, 1, 'Throwing knives'), knifeDmg: num(100, 5, 300, 5, 'Throwing knife damage'), knifePick: bool(true, 'Knives can be picked back up'),
+      decoyN: num(2, 0, 9, 1, 'Decoys per life'), decoyTime: num(8, 2, 30, 0.5, 'Decoy noise time (s)'), decoyRange: num(30, 5, 80, 1, 'Decoy lure radius (m)'),
+      cloak: bool(true, 'Shadow cloak'), cloakK: num(0.25, 0, 1, 0.05, 'Cloaked: visibility to bots (x)'), cloakDark: num(0.3, 0.02, 2, 0.01, 'Cloak: max light level'),
+      cloakSpeed: num(1.6, 0, 5, 0.1, 'Cloak: max speed (m/s)'), cloakBody: num(0.3, 0, 1, 0.05, 'Cloaked: body brightness to mercs (x)'),
+      climb: bool(true, 'Wall climb / ledge hang'), climbH: num(3.4, 1, 4.5, 0.1, 'Max climb height (m)'), climbTime: num(0.8, 0.3, 2.5, 0.05, 'Climb-up time (s)'),
+      lamps: bool(true, 'Lamps can be shot out'), botGadgets: bool(true, 'Spy bots use gadgets'), loadoutScreen: bool(true, 'Loadout screen before each round'),
     },
   };
   /* weapon fields the editor exposes, read from / written to a WEAPONS def */
@@ -61,7 +73,7 @@
     hrec: num(1, 0.1, 3, 0.01, 'Horizontal recoil x'), kick: num(1, 0.1, 3, 0.01, 'Kick x'), mob: num(1, 0.5, 1.5, 0.01, 'Mobility x'), flash: num(1, 0, 3, 0.01, 'Muzzle flash x'),
     silent: bool(false, 'Suppressed (quiet, bots hear it only close)'), laser: bool(false, 'Laser'), vol: num(1, 0, 2, 0.05, 'Shot volume x'), soundSet: sel('', [], 'Sound set override'),
   };
-  const DEF_LOADOUT = { merc: { primary: 'm4', primaryAtt: [], secondary: 'm9', secondaryAtt: [] }, spy: { secondary: 'none' } };
+  const DEF_LOADOUT = { merc: { primary: 'm4', primaryAtt: [], secondary: 'm9', secondaryAtt: [] }, spy: { secondary: 'none', secondaryAtt: [], gadgets: { smoke: true, flash: true, knife: true, decoy: true } } };
   const clone = (o) => JSON.parse(JSON.stringify(o));
   function defaults() {
     const v = {};
@@ -114,6 +126,8 @@
         v.loadout.merc.primaryAtt = attl(L.merc.primaryAtt); v.loadout.merc.secondaryAtt = attl(L.merc.secondaryAtt);
       }
       if (L.spy && (gunOk(L.spy.secondary) || L.spy.secondary === 'none')) v.loadout.spy.secondary = L.spy.secondary;
+      if (L.spy) v.loadout.spy.secondaryAtt = attl(L.spy.secondaryAtt);
+      if (L.spy && L.spy.gadgets && typeof L.spy.gadgets === 'object') for (const k in v.loadout.spy.gadgets) if (typeof L.spy.gadgets[k] === 'boolean') v.loadout.spy.gadgets[k] = L.spy.gadgets[k];
     }
     if (raw.lookPresets && typeof raw.lookPresets === 'object') {
       let n = 0;
@@ -228,7 +242,7 @@
     vmEquip(PL.weapons[0].def); VM.action = null; VM.lower = 1; VM.lowerTarget = 0;
   }
   function giveSpyLoadout() {
-    const id = BOCFG.v.loadout.spy.secondary, d = id !== 'none' ? gunDef(id, []) : null;
+    const id = BOCFG.v.loadout.spy.secondary, d = id !== 'none' ? gunDef(id, BOCFG.v.loadout.spy.secondaryAtt || []) : null;
     if (d) { PL.ent.arms = makeArms([d, d]); }
   }
   const spyArmed = () => !!(BOCFG.v.loadout.spy.secondary !== 'none' && (hasKey(WEAPONS, BOCFG.v.loadout.spy.secondary) || hasKey(CUSTOM, BOCFG.v.loadout.spy.secondary)));

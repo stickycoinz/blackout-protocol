@@ -11,7 +11,7 @@
    ========================================================================== */
 (function () {
   const MERC = 0, SPY = 1;
-  const GAME_DEF = { roundTime: 240, hackTime: 4.5, hacksNeeded: 2, takedownRange: 1.8, health: 100, spySpeed: 1, mercSpeed: 1, mercs: 2, spies: 2, extractTime: 1.5, spyStealth: 0.55, botHack: 0.35, botDelay: 12 };
+  const GAME_DEF = { roundTime: 240, hackTime: 4.5, hacksNeeded: 2, takedownRange: 1.8, health: 100, spySpeed: 1, mercSpeed: 1, mercs: 2, spies: 2, extractTime: 1.5, spyStealth: 0.55, botHack: 0.35, botDelay: 12, rollIFrames: 0.35, rollCd: 1.1, rollDist: 3.1 };
   const G = () => Object.assign({}, GAME_DEF, (window.BOCFG && BOCFG.v && BOCFG.v.game) || {});
   const R = window.BO_RULES = {
     active: false, terminals: [], roundOver: false, winner: -1, reason: '', kicker: '', extractProg: 0,
@@ -79,7 +79,7 @@
       const a1 = b.aw.get(e) || 0;
       if (a1 > a0) {
         const d = hyp2(e.pos.x, e.pos.z, b.pos.x, b.pos.z);
-        const k = d < 2.5 ? 1 : k0 * (e.crouch ? 0.6 : 1) * (e.sprinting ? 1.5 : 1);
+        const k = d < 2.5 ? 1 : k0 * (e.crouch ? 0.6 : 1) * (e.sprinting ? 1.5 : 1) * (R.cloakMul ? R.cloakMul(e, b) : 1);
         b.aw.set(e, Math.min(1, a0 + (a1 - a0) * Math.min(1, k)));
       }
     }
@@ -193,6 +193,7 @@
     try { if (typeof fpvLeave === 'function' && PILOT && PILOT.d) fpvLeave(); } catch (err) {}
     rebrand();
     hudShow(true);
+    if (R.onSetup) { try { R.onSetup(); } catch (err) { console.warn('BO setup hook', err); } }
   }
   R.setup = boSetupRound;
 
@@ -272,7 +273,8 @@
     if ((e.boRollCd || 0) > 0 || !e.onGround) return false;
     const l = Math.hypot(dx, dz);
     if (l < 1e-3) { dx = -Math.sin(e.isPlayer ? PL.yaw : e.yaw); dz = -Math.cos(e.isPlayer ? PL.yaw : e.yaw); } else { dx /= l; dz /= l; }
-    e.boRollT = 0.6; e.boRollCd = 1.1; e.boRollDir = [dx, dz];
+    const gg = G();
+    e.boRollT = 0.6; e.boRollCd = Math.max(0.6, gg.rollCd != null ? gg.rollCd : 1.1); e.boRollDir = [dx, dz]; e.boRollAt = MATCH.time;
     log('ROLL ' + e.name);
     return true;
   }
@@ -281,7 +283,9 @@
     if (e.boRollCd > 0) e.boRollCd -= dt;
     if (!(e.boRollLeft > 0) && e.boRollT > 0 && e.boRollDir) e.boRollLeft = 0.55;
     if (e.boRollLeft > 0 && e.boRollDir) {
-      const sp = 6.2 * Math.min(1, e.boRollLeft / 0.2 + 0.4);
+      // the stock curve covers about 3.1 m; rollDist scales it
+      const rd = G().rollDist, sk = rd > 0 ? rd / 3.1 : 1;
+      const sp = 6.2 * sk * Math.min(1, e.boRollLeft / 0.2 + 0.4);
       e.pos.x += e.boRollDir[0] * sp * dt; e.pos.z += e.boRollDir[1] * sp * dt;
       collideCircle(e.pos, 0.34, 1.2);
       e.boRollLeft -= dt;
@@ -307,7 +311,7 @@
   addEventListener('mousedown', (e) => {
     if (e.button === 0 && boOn() && spyRole() && MATCH.state === 'playing' && pointerActive()) R.clickT = performance.now();
   }, true);
-  const pressed = (c) => { const now = !!KEYS[c], was = !!R.prevKeys[c]; return now && !was; };
+  const pressed = R.pressed = (c) => { const now = !!KEYS[c], was = !!R.prevKeys[c]; return now && !was; };
 
   function playerSpyTick(dt) {
     const e = PL.ent; if (!e || !e.alive || e.team !== SPY) { R.extractProg = 0; return; }
@@ -345,7 +349,9 @@
         prog = term.prog;
       }
     }
+    if (clicked && !td && !inX && R.onSpyClick) { try { R.onSpyClick(e); } catch (err) { console.warn('BO click', err); } }
     if (clicked) R.clickT = 0;
+    if (R.spyPrompt) { const sp2 = R.spyPrompt(e); if (sp2 && !prompt) prompt = sp2; }
     HUD_BO.prompt = prompt; HUD_BO.prog = prog;
   }
 
@@ -408,6 +414,7 @@
         }
         S.goal = S.term ? new THREE.Vector3(S.term.x, 0, S.term.z) : null;
       }
+      if (R.botAbil) { try { R.botAbil(b, S, threat, td, dt); } catch (err) { console.warn('BO bot gadget', err); } }
     }
     if (S.evadeT > 0) S.evadeT -= dt;
     if (S.mode === 'stalk' && S.tgt && S.tgt.alive) {
@@ -533,9 +540,11 @@
     const keys = el.querySelector('.bo-keys');
     const kt = spy ? '<b>E</b>hack / takedown / extract &nbsp;<b>F</b><b>LMB</b>takedown<br><b>SHIFT</b>sprint &nbsp;<b>C</b><b>CTRL</b>crouch-sneak &nbsp;<b>R</b>roll &nbsp;<b>F10</b>editor'
       : '<b>LMB</b>fire &nbsp;<b>RMB</b>aim &nbsp;<b>R</b>reload &nbsp;<b>L</b>flashlight &nbsp;<b>F10</b>editor';
-    if (keys._t !== kt) { keys.innerHTML = kt; keys._t = kt; }
+    const kt2 = R.keysHtml ? R.keysHtml(spy, me) : kt;
+    if (keys._t !== kt2) { keys.innerHTML = kt2; keys._t = kt2; }
+    if (false) { keys.innerHTML = kt; keys._t = kt; }
     const st = el.querySelector('.bo-state');
-    const stt = spy ? (me.boRollLeft > 0 ? 'ROLL' : me.crouch ? 'SNEAKING' : me.sprinting ? 'SPRINTING' : 'WALKING') : (BO.flashOn ? 'FLASHLIGHT ON' : 'FLASHLIGHT OFF');
+    const stt = R.stateText ? R.stateText(spy, me) : spy ? (me.boRollLeft > 0 ? 'ROLL' : me.crouch ? 'SNEAKING' : me.sprinting ? 'SPRINTING' : 'WALKING') : (BO.flashOn ? 'FLASHLIGHT ON' : 'FLASHLIGHT OFF');
     if (st._t !== stt) { st.textContent = stt; st._t = stt; }
     // world markers: terminals (both roles), extract ring once open
     for (const t of R.terminals) {
@@ -592,7 +601,7 @@
     hudTick();
     R.prevKeys = Object.assign({}, KEYS);
   }
-  R.tick = tick;
+  R.tick = tick; R.hackedCount = hackedCount; R.extractOpen = extractOpen; R.marker = marker; R.mercUnaware = mercUnaware; R.terminalNear = terminalNear;
   const _frame = frame;
   frame = function (now) {
     _frame(now);

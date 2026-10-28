@@ -182,12 +182,26 @@
   function tGame() {
     return [sec('Round'), ...sectionFields('game', ['roundTime', 'hackTime', 'hacksNeeded', 'extractTime', 'takedownRange']),
       sec('Players'), ...sectionFields('game', ['health', 'spySpeed', 'mercSpeed', 'spyStealth', 'botHack', 'botDelay']),
+      sec('Spy roll'), ...sectionFields('game', ['rollIFrames', 'rollCd', 'rollDist']),
       sec('Bots'), ...sectionFields('game', ['mercs', 'spies']),
       note('Round rules, health and team sizes apply when the next round starts. Speeds apply live.'),
       el('div', { class: 'btns' }, btn('Restart round now', () => { try { if (MATCH.state === 'playing' && !(typeof NET !== 'undefined' && NET.role === 'client')) { close(); startMatch(); } else toast('Start a BLACKOUT match first'); } catch (e) { toast(e.message); } }, 'pri'),
         btn('Reset gameplay', () => { BOCFG.resetSection('game'); render(); toast('Gameplay reset'); }, 'dng'))];
   }
-  const TABS = [['light', 'Lighting', tLight], ['look', 'Look', tLook], ['weapons', 'Weapons', tWeapons], ['atts', 'Attachments', tAtts], ['game', 'Gameplay', tGame]];
+  function tSpy() {
+    return [sec('Toughness'), ...sectionFields('spy', ['spyDmg', 'stagger', 'staggerSlow']),
+      sec('Smoke bomb (G)'), ...sectionFields('spy', ['smokeN', 'smokeLife']),
+      sec('Flashbang (Q)'), ...sectionFields('spy', ['flashN', 'flashStun', 'flashR']),
+      sec('Throwing knife (X / click)'), ...sectionFields('spy', ['knifeN', 'knifeDmg', 'knifePick']),
+      sec('Decoy (V)'), ...sectionFields('spy', ['decoyN', 'decoyTime', 'decoyRange']),
+      sec('Shadow cloak'), ...sectionFields('spy', ['cloak', 'cloakK', 'cloakDark', 'cloakSpeed', 'cloakBody']),
+      sec('Climb (SPACE at a ledge)'), ...sectionFields('spy', ['climb', 'climbH', 'climbTime']),
+      sec('World and bots'), ...sectionFields('spy', ['lamps', 'botGadgets', 'loadoutScreen']),
+      note('Gadget counts refill when the next round starts. Everything else applies live.'),
+      el('div', { class: 'btns' }, btn('Open loadout (F9)', () => { close(); if (window.BOLOADOUT) BOLOADOUT.open(false); }, 'pri'),
+        btn('Reset spy kit', () => { BOCFG.resetSection('spy'); render(); toast('Spy kit reset'); }, 'dng'))];
+  }
+  const TABS = [['light', 'Lighting', tLight], ['look', 'Look', tLook], ['weapons', 'Weapons', tWeapons], ['atts', 'Attachments', tAtts], ['game', 'Gameplay', tGame], ['spy', 'Spy kit', tSpy]];
   function render() {
     const y = body.scrollTop; body.innerHTML = '';
     for (const b of root.querySelectorAll('.tab')) b.classList.toggle('on', b.dataset.t === tab);

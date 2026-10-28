@@ -314,7 +314,7 @@ function boKhamsinBuild() {
     boxC('boScreen', x - fx * 0.125, 1.12, z - fz * 0.125, 0.54, 0.4, 0.02, { rot, collide: false });
     boxC('boScreen', x + fx * 0.05, 1.05, z + fz * 0.05, 0.5, 0.012, 0.3, { rot, collide: false }); // keyboard strip
     boxC('boRed', x - fx * 0.17, 1.62, z - fz * 0.17, 0.12, 0.06, 0.06, { rot, collide: false });
-    LAMPS.push({ x: x + fx * 0.45, y: 1.9, z: z + fz * 0.45, c: [0.3, 0.9, 0.8], p: 0.2, r: 3.0, down: 0 });
+    LAMPS.push({ x: x + fx * 0.45, y: 1.9, z: z + fz * 0.45, c: [0.3, 0.9, 0.8], p: 0.2, r: 3.0, down: 0, fixed: 1 });
   }
   // HACK SPAWN extract: red frame on the ground, a beacon post and a red pool of light
   const E = BO_KH_EXTRACT, r = E.r;
@@ -322,7 +322,7 @@ function boKhamsinBuild() {
     boxC('boRed', cx, 0.015, cz, w, 0.012, d, { collide: false });
   boxC('steel', E.x + r + 0.25, 0, E.z, 0.12, 2.2, 0.12, { tint: [0.15, 0.15, 0.17] });
   boxC('boRed', E.x + r + 0.25, 2.2, E.z, 0.2, 0.14, 0.2, { collide: false });
-  LAMPS.push({ x: E.x, y: 2.4, z: E.z, c: [1.0, 0.14, 0.1], p: 1.4, r: 5.5, down: 0 });
+  LAMPS.push({ x: E.x, y: 2.4, z: E.z, c: [1.0, 0.14, 0.1], p: 1.4, r: 5.5, down: 0, fixed: 1 });
 }
 
 /* Lights that BLACKOUT switches during play (merc flashlight, spy rim/fill) are created and made visible while the map is built,
