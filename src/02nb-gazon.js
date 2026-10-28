@@ -111,7 +111,7 @@ void main() {
   #include <fog_fragment>
 }`;
 function grassMaterial() {
-  const U = Object.assign(THREE.UniformsUtils.clone(THREE.UniformsLib.fog), GRASS_U, { tLvB: LIVE_U.tLvB, uLvBnd: LIVE_U.uLvBnd, uLvW: LIVE_U.uLvW, tVol: WMU.tVol, uVolMin: WMU.uVolMin, uVolInv: WMU.uVolInv, uVolL: WMU.uVolL, uBounce: WMU.uBounce, uAOFloor: WMU.uAOFloor });
+  const U = Object.assign(THREE.UniformsUtils.clone(THREE.UniformsLib.fog), GRASS_U, { tLvB: LIVE_U.tLvB, uLvBnd: LIVE_U.uLvBnd, uLvW: LIVE_U.uLvW, tVol: WMU.tVol, uVolMin: WMU.uVolMin, uVolInv: WMU.uVolInv, uVolL: WMU.uVolL, uVolLC: WMU.uVolLC, uBounce: WMU.uBounce, uAOFloor: WMU.uAOFloor });
   const m = new THREE.ShaderMaterial({ uniforms: U, vertexShader: GRASS_VERT, fragmentShader: GRASS_FRAG, fog: true, side: THREE.DoubleSide });
   if (!NO_SHADOWS && CSM_HW.on) m.defines = { GR_SH: '' }; // sans cartes d'ombre (PowerVR) : aucune lecture de carte d'ombre dans le programme
   m.name = 'gazon';

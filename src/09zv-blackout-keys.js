@@ -122,12 +122,12 @@
   function hudSync() { hudKey = ACT.map((a) => code(a.id)).join(','); }
   R.keysHtml = (spy, me) => {
     if (!spy) return kb(K('fire')) + 'fire &nbsp;' + kb(K('aim')) + 'aim &nbsp;' + kb(K('reload')) + 'reload &nbsp;' + kb(K('w1')) + kb(K('w2')) + 'weapons &nbsp;' + kb(K('flash')) + 'flashlight &nbsp;' + kb(K('melee')) + 'knife &nbsp;' + kb(K('nade')) + 'grenade<br>'
-      + kb(K('sprint')) + 'sprint &nbsp;' + kb(K('crouchT')) + 'crouch &nbsp;' + kb(K('jump')) + 'jump &nbsp;' + kb(K('board')) + 'scores &nbsp;' + kb('F9') + 'loadout &nbsp;' + kb('F10') + 'editor &nbsp;<i>shoot lamps out to kill the light</i>';
+      + kb(K('sprint')) + 'sprint &nbsp;' + kb(K('crouchT')) + 'crouch &nbsp;' + kb(K('jump')) + 'jump &nbsp;' + kb(K('board')) + 'scores &nbsp;' + kb('F9') + 'loadout &nbsp;' + (window.BOADMIN && BOADMIN.can() ? kb('F10') + 'editor &nbsp;' : '') + '<i>shoot lamps out to kill the light</i>';
     const g = (me && me.boGad) || { smoke: 0, flash: 0, knife: 0, decoy: 0 }, n = (k) => '<em' + (g[k] > 0 ? '' : ' class="z"') + '>×' + g[k] + '</em>';
     const armed = !!(window.BOCFG && BOCFG.spyArmed && BOCFG.spyArmed()), L = armed ? '' : kb(K('fire'));
     return (armed ? kb(K('fire')) + 'fire M9 &nbsp;' + kb(K('aim')) + 'aim &nbsp;' + kb(K('reload')) + 'reload &nbsp;' : '') + kb(K('hack')) + 'hack / takedown / extract &nbsp;' + kb(K('takedown')) + L + 'takedown &nbsp;' + kb(K('roll')) + 'roll (i-frames)<br>'
       + kb(K('smoke')) + 'smoke ' + n('smoke') + ' &nbsp;' + kb(K('flashbang')) + 'flashbang ' + n('flash') + ' &nbsp;' + kb(K('tknife')) + L + 'knife ' + n('knife') + ' &nbsp;' + kb(K('decoy')) + 'decoy ' + n('decoy') + '<br>'
-      + kb(K('jump')) + 'climb / hang &nbsp;' + kb(K('crouchT')) + kb(K('crouch')) + 'crouch (cloak in shadow) &nbsp;' + kb(K('sprint')) + 'sprint &nbsp;' + kb(K('board')) + 'scores &nbsp;' + kb('F9') + 'loadout &nbsp;' + kb('F10') + 'editor';
+      + kb(K('jump')) + 'climb / hang &nbsp;' + kb(K('crouchT')) + kb(K('crouch')) + 'crouch (cloak in shadow) &nbsp;' + kb(K('sprint')) + 'sprint &nbsp;' + kb(K('board')) + 'scores &nbsp;' + kb('F9') + 'loadout' + (window.BOADMIN && BOADMIN.can() ? ' &nbsp;' + kb('F10') + 'editor' : '');
   };
 
   /* the merc flashlight listener (06za) reads BOKEYS.code('flash') */
@@ -147,7 +147,7 @@
       for (const [g, t, sub] of [['all', 'SHARED', 'both teams'], ['merc', 'MERC', 'first person · hold the facility'], ['spy', 'SPY', 'over the shoulder · hack and extract']]) {
         const col = document.createElement('section'); col.className = 'bo-ctl-col ' + g;
         col.innerHTML = '<h5>' + t + '<small>' + sub + '</small></h5>';
-        for (const a of ACT.filter((x) => x.g === g)) {
+        for (const a of ACT.filter((x) => x.g === g && (x.id !== 'editor' || (window.BOADMIN && BOADMIN.can())))) {
           const row = document.createElement('div'); row.className = 'bo-ctl-row' + (a.fixed ? ' fixed' : '');
           const name = document.createElement('span'); name.textContent = a.label;
           const b = document.createElement('button'); b.type = 'button'; b.className = 'bo-kb' + (!a.fixed && code(a.id) !== (a.rip ? bindDefault(a.rip) : a.def) ? ' changed' : '') + (CAP.id === a.id ? ' wait' : '');

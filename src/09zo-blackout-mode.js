@@ -568,8 +568,8 @@
     p.style.display = pr ? 'block' : 'none'; if (p._t !== pr) { p.textContent = pr; p._t = pr; }
     bar.style.display = pr && HUD_BO.prog >= 0 ? 'block' : 'none'; bar.firstChild.style.width = Math.round(Math.max(0, HUD_BO.prog) * 100) + '%';
     const keys = el.querySelector('.bo-keys');
-    const kt = spy ? '<b>E</b>hack / takedown / extract &nbsp;<b>F</b><b>LMB</b>takedown<br><b>SHIFT</b>sprint &nbsp;<b>C</b><b>CTRL</b>crouch-sneak &nbsp;<b>R</b>roll &nbsp;<b>F10</b>editor'
-      : '<b>LMB</b>fire &nbsp;<b>RMB</b>aim &nbsp;<b>R</b>reload &nbsp;<b>L</b>flashlight &nbsp;<b>F10</b>editor';
+    const kt = spy ? '<b>E</b>hack / takedown / extract &nbsp;<b>F</b><b>LMB</b>takedown<br><b>SHIFT</b>sprint &nbsp;<b>C</b><b>CTRL</b>crouch-sneak &nbsp;<b>ALT</b>roll'
+      : '<b>LMB</b>fire &nbsp;<b>RMB</b>aim &nbsp;<b>R</b>reload &nbsp;<b>L</b>flashlight';
     const kt2 = R.keysHtml ? R.keysHtml(spy, me) : kt;
     if (keys._t !== kt2) { keys.innerHTML = kt2; keys._t = kt2; }
     if (false) { keys.innerHTML = kt; keys._t = kt; }

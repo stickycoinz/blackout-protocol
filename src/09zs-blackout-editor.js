@@ -40,6 +40,16 @@
   #boEd .toast { position: absolute; left: 16px; right: 16px; bottom: 64px; padding: 8px 10px; background: var(--acc, #F6C445); color: var(--acc-ink, #111);
     font-weight: 700; opacity: 0; transition: opacity .2s; pointer-events: none; }
   #boEd .toast.show { opacity: 1; }
+  #boEd .live { margin-top: 4px; display: inline-block; padding: 2px 8px; border: 1px solid #b3242a; color: #ff6a6a; font: 700 11px ui-monospace, monospace; letter-spacing: .08em; }
+  #boEd .live::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #ff3b3b; margin-right: 6px; vertical-align: 1px; animation: boLive 1.2s infinite; }
+  @keyframes boLive { 50% { opacity: .25; } }
+  #boEd .pal { display: flex; flex-direction: column; gap: 4px; margin: 4px 0 8px; }
+  #boEd .pal .sw { display: flex; align-items: center; gap: 6px; }
+  #boEd .pal .sw input[type=color] { width: 54px; height: 26px; padding: 0; border: 1px solid #444; background: none; }
+  #boEd .pal .sw code { font: 12px ui-monospace, monospace; color: #aaa; min-width: 64px; }
+  #boEd .pal .sw .b { padding: 2px 8px; min-width: 0; }
+  #boEd .palbar { display: flex; height: 18px; border: 1px solid #333; margin: 2px 0 6px; }
+  #boEd .palbar i { flex: 1; }
   #boEdBtn { padding: 8px 12px; border: 1px solid #F6C445; background: #1a1608; color: #F6C445; cursor: pointer; border-radius: 4px; font: 600 13px system-ui, sans-serif; }`;
   let root, body, tab = 'light', wSel = null, aSel = null, toastT = null;
   const el = (t, a, ...k) => { const e = document.createElement(t); if (a) for (const n in a) { if (n === 'class') e.className = a[n]; else if (n.startsWith('on')) e[n] = a[n]; else e.setAttribute(n, a[n]); } for (const c of k) if (c != null) e.append(c); return e; };
@@ -80,6 +90,8 @@
       note('Hotspot = the bright centre beam; spill = the wide soft halo around it. Decay 2 fades smoothly to the throw distance. Bot / peer torch lights: how many nearby mercs cast real light (0 to 3, applies at the next map load); every merc also shows a faint visible beam. L or Shift+F toggles the flashlight. With drain above 0 the battery empties while it is on and the light shuts off at 0 %.'),
       sec('Level'), ...sectionFields('light', ['exposure', 'ambient', 'moon', 'fogD', 'fogColor', 'lamps', 'termGlow']),
       note('Level lighting applies on the BLACKOUT map (live in a match).'),
+      sec('Light colours'), ...sectionFields('light', ['lampColor', 'lampTint', 'moonColor', 'ambColor', 'termColor', 'muzzleColor']),
+      note('Street lamp colour recolours the lamp pools (strength 0 keeps the warm built-in colour). Moonlight is the cold key light, ambient the sky fill, terminal the hack screens. The flashlight tint and fog colour are above.'),
       sec('Muzzle flash'), ...sectionFields('light', ['muzzleK', 'muzzleRange', 'suppFlash']),
       note('Every shot lights its surroundings for a few hundredths of a second (player, bots and peers). Suppressed x: how much of the light and flash a suppressed gun keeps (0 = none). Uses the fixed pool of shot lights: none on the low and ultra-light quality profiles.'),
       el('div', { class: 'btns' }, btn('Reset lighting', () => { BOCFG.resetSection('light'); render(); toast('Lighting reset'); }, 'dng'))];
@@ -90,17 +102,44 @@
     for (const n in U) s.append(el('option', { value: 'u:' + n }, n + ' (saved)'));
     const name = el('input', { type: 'text', placeholder: 'preset name', maxlength: 24 });
     const load = () => { const [k, n] = [s.value.slice(0, 1), s.value.slice(2)]; const src = k === 'b' ? P[n] : U[n]; const D = BOCFG.defaults().look;
-      BOCFG.v.look = Object.assign(D, k === 'b' ? src : src); BOCFG.applySection('look'); BOCFG.save(); render(); toast('Look: ' + n); };
-    const save = () => { const n = BOCFG.nameOk(name.value, ''); if (!n) { name.classList.add('bad'); toast('Type a preset name'); return; } U[n] = Object.assign({}, BOCFG.v.look); BOCFG.save(); render(); toast('Saved preset ' + n); };
+      BOCFG.v.look = Object.assign(D, src); if (Array.isArray(src.pal)) BOCFG.v.look.pal = src.pal.slice(); BOCFG.applySection('look'); BOCFG.save(); render(); toast('Look: ' + n); };
+    const save = () => { const n = BOCFG.nameOk(name.value, ''); if (!n) { name.classList.add('bad'); toast('Type a preset name'); return; } U[n] = Object.assign({}, BOCFG.v.look, { pal: BOCFG.v.look.pal.slice() }); BOCFG.save(); render(); toast('Saved preset ' + n); };
     const del = () => { if (s.value.startsWith('u:')) { delete U[s.value.slice(2)]; BOCFG.save(); render(); toast('Preset deleted'); } else toast('Built-in presets cannot be deleted'); };
     return [sec('Presets'), el('div', { class: 'row w2' }, el('label', null, 'Preset'), s),
       el('div', { class: 'btns' }, btn('Load', load, 'pri'), btn('Delete', del, 'dng')),
       el('div', { class: 'row w2' }, el('label', null, 'Save current as'), name), el('div', { class: 'btns' }, btn('Save preset', save), btn('Reset look', () => { BOCFG.resetSection('look'); render(); toast('Look reset'); }, 'dng')),
       sec('Resolution'), ...sectionFields('look', ['pixel', 'renderScale']),
       sec('Dithering and palette'), ...sectionFields('look', ['dither', 'ditherPat', 'ditherStr', 'levels', 'palette']),
-      note('Palette "blackout" = near-black / slate-teal / bone white / red. Without a palette, dithering quantises each colour channel to the colour levels.'),
+      note('Palette "blackout" = near-black / slate-teal / bone white / red. "custom" = your own colours below. Without a palette, dithering quantises each colour channel to the colour levels.'),
+      ...palEditor(),
+      sec('Colour tint (split tone)'), ...sectionFields('look', ['toneStr', 'toneSh', 'toneMid', 'toneHi']),
+      note('Pushes the dark, middle and bright parts of the picture toward these colours before the palette / dither (grey midtone = no tint). Strength 0 = off.'),
       sec('Grade'), ...sectionFields('look', ['contrast', 'saturation', 'brightness']),
       sec('Outlines and screen'), ...sectionFields('look', ['outline', 'outlineW', 'outlineStr', 'vignette', 'grain', 'scan', 'scanSize'])];
+  }
+  /* pass 14: custom palette, 2 to 16 colours; the dither snaps every pixel to the nearest one */
+  function palEditor() {
+    const L = BOCFG.v.look, P = L.pal, MAXP = 16, MINP = 2;
+    const commit = (re) => { BOCFG.applySection('look'); BOCFG.save(); if (re) render(); };
+    const bar = el('div', { class: 'palbar' }); for (const h of P) bar.append(el('i', { style: 'background:' + h }));
+    const list = el('div', { class: 'pal' });
+    P.forEach((h, i) => {
+      const c = el('input', { type: 'color' }); c.value = h;
+      const code = el('code', null, h);
+      c.oninput = () => { const v = BOCFG.vField({ t: 'c', d: P[i] }, c.value); P[i] = v; code.textContent = v; bar.children[i].style.background = v; commit(false); };
+      const mv = (d) => () => { const j = i + d; if (j < 0 || j >= P.length) return; const t = P[i]; P[i] = P[j]; P[j] = t; commit(true); };
+      list.append(el('div', { class: 'sw' }, el('span', null, String(i + 1).padStart(2, '0')), c, code, btn('\u2191', mv(-1)), btn('\u2193', mv(1)),
+        btn('x', () => { if (P.length <= MINP) { toast('A palette needs at least ' + MINP + ' colours'); return; } P.splice(i, 1); commit(true); }, 'dng')));
+    });
+    const from = el('select'); for (const n in BOPOST.PALETTES) from.append(el('option', { value: n }, n)); from.value = 'blackout';
+    return [sec('Custom palette (' + P.length + ' / ' + MAXP + ' colours)'), bar, list,
+      el('div', { class: 'btns' },
+        btn('Add colour', () => { if (P.length >= MAXP) { toast('16 colours max'); return; } P.push(P[P.length - 1] || '#808080'); commit(true); }),
+        btn('Sort dark to light', () => { const lu = (h) => { const n = parseInt(h.slice(1), 16); return 0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255); }; P.sort((a, b) => lu(a) - lu(b)); commit(true); }),
+        btn('Use custom palette', () => { BOCFG.set('look', 'palette', 'custom'); if (!L.dither) BOCFG.set('look', 'dither', true); render(); toast('Palette: custom'); }, 'pri')),
+      el('div', { class: 'row w2' }, el('label', null, 'Start from'), from),
+      el('div', { class: 'btns' }, btn('Copy colours', () => { L.pal = BOPOST.PALETTES[from.value].slice(); commit(true); toast('Copied ' + from.value); })),
+      note('Pick each colour with its swatch. Save the look as a preset (top of this tab) to keep a palette by name; presets, export / import and the online host sync carry it.')];
   }
   function gunList() { return Object.keys(WEAPONS).map((id) => [id, WEAPONS[id].name + ' (' + WEAPONS[id].cat + ')']).concat(Object.keys(BOCFG.v.weapons.custom).map((id) => [id, BOCFG.v.weapons.custom[id].name + ' (custom)'])); }
   function tWeapons() {
@@ -228,18 +267,21 @@
     body = el('div', { class: 'body' });
     const file = el('input', { type: 'file', accept: '.json,application/json', style: 'display:none' });
     file.onchange = () => { const f = file.files[0]; if (!f) return; f.text().then((t) => { try { BOCFG.importText(t); render(); toast('Config imported'); } catch (e) { toast('Import failed: not a valid config JSON'); } file.value = ''; }); };
-    root.append(el('div', { class: 'hd' }, el('div', null, el('h2', null, 'BLACKOUT EDITOR'), el('small', null, 'F10 to close · auto-saved')), btn('Close', () => close())), tabs, body,
+    root.append(el('div', { class: 'hd' }, el('div', null, el('h2', null, 'BLACKOUT EDITOR'), el('small', null, 'F10 to close · auto-saved'), el('div', { class: 'live', id: 'boEdLive' })), btn('Close', () => close())), tabs, body,
       el('div', { class: 'ft' }, btn('Export JSON', () => { BOCFG.download(); toast('Exported blackout-config.json'); }), btn('Import JSON', () => file.click()),
-        btn('Reset all', () => { if (confirm('Reset every BLACKOUT setting to default?')) { BOCFG.resetAll(); render(); toast('Everything reset'); } }, 'dng'), file),
+        btn('Reset all', () => { if (confirm('Reset every BLACKOUT setting to default?')) { BOCFG.resetAll(); render(); toast('Everything reset'); } }, 'dng'),
+        btn('Lock editor on this device', () => { if (window.BOADMIN) BOADMIN.lock(); close(); }), file),
       el('div', { class: 'toast' }));
     // the game never sees keys or clicks meant for the panel
     for (const ev of ['keydown', 'keyup']) root.addEventListener(ev, (e) => { if (e.code !== 'F10') e.stopPropagation(); });
     for (const ev of ['mousedown', 'mouseup', 'click', 'wheel', 'contextmenu']) root.addEventListener(ev, (e) => e.stopPropagation());
     document.body.append(root);
   }
+  const can = () => !!(window.BOADMIN && BOADMIN.can());
   function open() {
+    if (!can()) { close(); return; }
     if (!root) build();
-    root.classList.add('open'); render();
+    root.classList.add('open'); render(); live();
     try { if (document.pointerLockElement) { LOCK.resumeT = performance.now(); LOCK.scriptExit = true; document.exitPointerLock(); } } catch (e) {}
     for (const k in KEYS) KEYS[k] = false;
   }
@@ -248,15 +290,22 @@
     try { if (MATCH.state === 'playing' && !pointerActive()) requestLock(true); } catch (e) {}
   }
   const isOpen = () => !!(root && root.classList.contains('open'));
+  /* pass 14: while hosting online, every change goes out live to the room (09zzb-blackout-admin.js) */
+  function live() {
+    const d = root && root.querySelector('#boEdLive'); if (!d) return;
+    const t = window.BOADMIN && BOADMIN.liveText ? BOADMIN.liveText() : '';
+    d.textContent = t; d.style.display = t ? '' : 'none';
+  }
+  setInterval(() => { if (isOpen()) { live(); if (!can()) close(); } }, 1000);
   window.BOEDITOR = { open, close, toggle: () => (isOpen() ? close() : open()), isOpen, setTab: (t) => { tab = t; if (isOpen()) render(); }, render };
-  addEventListener('keydown', (e) => { if (e.code === 'F10') { e.preventDefault(); e.stopPropagation(); if (!e.repeat) BOEDITOR.toggle(); } else if (e.code === 'Escape' && isOpen()) { e.stopPropagation(); close(); } }, true);
+  addEventListener('keydown', (e) => { if (e.code === 'F10' && !(e.ctrlKey && e.shiftKey)) { e.preventDefault(); if (!can()) return; e.stopPropagation(); if (!e.repeat) BOEDITOR.toggle(); } else if (e.code === 'Escape' && isOpen()) { e.stopPropagation(); close(); } }, true);
   // menu button: next to MERC / SPY (BLACKOUT role picker), and always in the pause / main menu corner
   const addBtn = () => {
     if (document.getElementById('boEdBtn')) return true;
     const host = document.getElementById('boRole'); if (!host) return false;
     css();
     const b = el('button', { id: 'boEdBtn', type: 'button', title: 'BLACKOUT editor (F10)' }, 'EDITOR (F10)');
-    b.onclick = (e) => { e.stopPropagation(); BOEDITOR.toggle(); };
+    b.onclick = (e) => { e.stopPropagation(); if (can()) BOEDITOR.toggle(); };
     host.append(b); return true;
   };
   const iv = setInterval(() => { if (addBtn()) clearInterval(iv); }, 500);
