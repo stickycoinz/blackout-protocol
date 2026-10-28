@@ -324,7 +324,7 @@ const WM_AO = `{
   wmFogK = mix(0.35, 1.0, max(sc, uSkyC.z)); // brume claire si la caméra ou le point voient le ciel
   reflectedLight.indirectDiffuse *= sky;
   reflectedLight.directDiffuse *= wmPS; reflectedLight.directSpecular *= wmPS;${NO_SHADOWS ? `
-  reflectedLight.directDiffuse *= vol.a; reflectedLight.directSpecular *= vol.a; // ombre du soleil cuite (sans carte d'ombre, NO_SHADOWS)` : ''}
+  reflectedLight.directDiffuse = (reflectedLight.directDiffuse - boSpD) * vol.a + boSpD; reflectedLight.directSpecular = (reflectedLight.directSpecular - boSpS) * vol.a + boSpS; // ombre du soleil cuite (sans carte d'ombre, NO_SHADOWS), sur le soleil seulement : les lampes torches (spots, boSpD/boSpS) n'y sont pas soumises` : ''}
   reflectedLight.indirectDiffuse += uBounce * vol.g * BRDF_Lambert( material.diffuseColor ) * mix(0.55, 1.0, vAoc) * mix(uSkyC.w, 1.0, sc);
   reflectedLight.indirectDiffuse += volLamp(vq) * material.diffuseColor * mix(0.55, 1.0, vAoc); // lampes du décor (02e-light.js)
   float dNV = saturate( dot( geometry.normal, geometry.viewDir ) );
@@ -443,7 +443,7 @@ const VL_AO = `#include <aomap_fragment>
   vec3 vq = (vVlPos + vVlNor * 0.3 - uVolMin) * uVolInv;
   vec4 vol = texture(tVol, VOL_Q(vq));
   float sky = mix(uAOFloor, 1.0, skyCurve(vol.r)); // (plancher entier : un soldat à l'abri reste lisible)${NO_SHADOWS ? `
-  reflectedLight.directDiffuse *= vol.a; reflectedLight.directSpecular *= vol.a; // ombre du soleil cuite (sans carte d'ombre, NO_SHADOWS)` : ''}
+  reflectedLight.directDiffuse = (reflectedLight.directDiffuse - boSpD) * vol.a + boSpD; reflectedLight.directSpecular = (reflectedLight.directSpecular - boSpS) * vol.a + boSpS; // ombre du soleil cuite (sans carte d'ombre, NO_SHADOWS), sur le soleil seulement : les lampes torches (spots, boSpD/boSpS) n'y sont pas soumises` : ''}
   reflectedLight.indirectDiffuse *= sky;
   reflectedLight.indirectDiffuse += uBounce * vol.g * BRDF_Lambert( material.diffuseColor ) * 0.8;
   reflectedLight.indirectDiffuse += volLamp(vq) * material.diffuseColor; // lampes du décor

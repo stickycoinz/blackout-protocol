@@ -17,6 +17,7 @@ Produite à partir du code par `python3 tools/dev/assets.py`, que `build.py` lan
 | Stratus | `src/02yj-stratus.js` | wood, stone, strata, lawn, dirt, flagstone, humus, canvas, burlap, timber, bark | qwantani_dawn |
 | Simoun | `src/02yl-simoun.js` | stone, wood, sand, dirt, pise, adobe, galets, vase, strata, reg, canvas, laine, steel, burlap, timber, palmbark | quarry_01 |
 | French Dream | `src/02yn-french-dream.js` | plaster, slate, rooftiles, asphalt, concrete, pavers, lawn, pathgravel, wood, paintwood, rollshutter, steel, timber, bark, dirt, sand, canvas, cardboard | kloofendal_48d |
+| blackout | `src/02za-blackout.js` |  |  |
 
 ## Prefabs du décor
 

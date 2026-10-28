@@ -93,6 +93,9 @@ socle_js("socle","window.SOCLE="+json.dumps({"depth":data_uri("assets/menu-depth
     "rankup":base64.b64encode(open("assets/rankup.mp3","rb").read()).decode("ascii")},separators=(",",":"))+";\n")
 # three.js r147 et ses modules d'exemples (assets/vendor/three-r147.js, tools/vendor.py) : même emballage, chargé juste avant le code du jeu
 three=open("assets/vendor/three-r147.js",encoding="utf-8").read()
+gltf=open("assets/vendor/GLTFLoader.js",encoding="utf-8").read()
+skel=open("assets/vendor/SkeletonUtils.js",encoding="utf-8").read()
+three=three+"\n"+gltf+"\n"+skel
 if "</script" in three.lower(): raise SystemExit("assets/vendor/three-r147.js contient </script")
 socle_js("three",three)
 print("socle :",", ".join(f"{n} ({os.path.getsize('dist/'+n)//1024} Ko)" for n in socle.values()))
@@ -241,6 +244,12 @@ print("musique des menus :",music or "aucune")
 # Le jeu compare les deux pour se recharger quand une nouvelle version est en ligne (voir src/09h-update.js et vercel.json).
 build_id=hashlib.sha1(html.encode("utf-8")).hexdigest()[:12]
 html=html.replace("__BUILD_ID__",build_id)
+# BLACKOUT: copy GLTF models into dist
+import shutil
+if os.path.isdir("assets/models"):
+    if os.path.isdir("dist/models"): shutil.rmtree("dist/models")
+    shutil.copytree("assets/models", "dist/models")
+    print("models :", "dist/models")
 print("identifiant de version :",build_id)
 # Politique de sécurité du contenu (CSP, balise meta en tête : elle suit chaque construction) : scripts du site seulement, plus les
 # scripts en ligne de la page désignés par leur empreinte ; un script glissé dans la page par une faille (attribut onerror, balise

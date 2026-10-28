@@ -474,6 +474,19 @@ function surfaceAt(p) {
 const STEP_CAM_W = 21;
 function applyCamera(dt, now, scoped) {
   const e = PL.ent, d = curW().def;
+  /* BO_SPY_CAM: over-the-shoulder for spies on BLACKOUT */
+  if (typeof BO !== 'undefined' && BO.role === 'spy' && e && e.alive && MATCH.state === 'playing') {
+    try {
+      if (typeof boApplySpyCamera === 'function') {
+        PL.yawReal = PL.yaw;
+        if (e.model) e.model.root.visible = true;
+        if (VM && VM.root) VM.root.visible = false;
+        if (VM && VM.holder) VM.holder.visible = false;
+        boApplySpyCamera(dt);
+        return;
+      }
+    } catch (err) {}
+  }
   PL.vpP += (-180 * PL.punchP - 16 * PL.vpP) * dt; PL.punchP += PL.vpP * dt;
   // secousses de la vue et à-coups du champ de vision des gestes de l'arme (chargeur claqué, culasse : vmCamKick, 06cy-ressorts.js)
   const K = VM.camK; if (K[0] || K[1] || K[2] || K[3]) { PL.vpP += K[0]; PL.vpY += K[1]; PL.vrollP += K[2]; PL.fovK = (PL.fovK || 0) + K[3]; K.fill(0); }

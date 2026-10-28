@@ -1,3 +1,4 @@
+/* BO_MUSIC_MUTE */
 /* ==========================================================================
    MUSIQUE DES MENUS
    Le thème (dist/menu-theme.mp3, à côté du HTML) joue dans les menus principaux et s'éteint en fondu dès le lancement
@@ -47,3 +48,15 @@ function musicTick(dt) {
   M.el.volume = clamp(M.vol, 0, 1);
   if (!want && M.vol < 0.003 && !M.el.paused) M.el.pause();
 }
+
+/* BLACKOUT: silence Riposte/Suno menu theme */
+(function(){
+  const kill = () => {
+    try {
+      if (typeof MENU_MUSIC !== "undefined" && MENU_MUSIC) { MENU_MUSIC.volume = 0; MENU_MUSIC.pause && MENU_MUSIC.pause(); }
+    } catch(e){}
+    document.querySelectorAll("audio").forEach(a => { try { a.volume = 0; a.pause(); } catch(e){} });
+  };
+  setInterval(kill, 2000);
+  addEventListener("DOMContentLoaded", kill);
+})();
