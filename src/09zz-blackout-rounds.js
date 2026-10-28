@@ -297,7 +297,7 @@
         try {
           const v = JSON.parse(JSON.stringify(BOCFG.v)); v.game = Object.assign({}, v.game, m.bo.game);
           if (m.bo.fd != null) v.light = Object.assign({}, v.light, { flashDrain: m.bo.fd });
-          BOCFG.replace(v, true);
+          if (!BOCFG.remote || JSON.stringify(v.game) !== JSON.stringify(BOCFG.v.game) || v.light.flashDrain !== BOCFG.v.light.flashDrain) BOCFG.replace(v, true);
         } catch (err) {}
       }
       return _cm.apply(this, arguments);
@@ -345,7 +345,7 @@
     const fd = BOCFG.v.light ? BOCFG.v.light.flashDrain : 0;
     rows.push(
       seg('flashDrain', 'Merc flashlight battery', [[0, 'Unlimited'], [1, 'Long'], [2.5, 'Medium'], [5, 'Short']], fd, (v) => v + ' %/s', (v) => { BOCFG.set('light', 'flashDrain', v); if (o.online) { try { netLobbyChanged(); } catch (err) {} } }, dis, { wide: true }),
-      { k: 'link', key: 'boadv', label: 'Advanced settings', sub: 'Every gameplay value in the BLACKOUT editor (F10)', open: () => { try { BOEDITOR.setTab('game'); BOEDITOR.open(); } catch (err) {} }, disabled: dis });
+      ...((window.BOADMIN && BOADMIN.can()) ? [{ k: 'link', key: 'boadv', label: 'Advanced settings', sub: 'Every gameplay value in the BLACKOUT editor (F10)', open: () => { try { BOEDITOR.setTab('game'); BOEDITOR.open(); } catch (err) {} }, disabled: dis }] : []));
     if (o.pubOk) rows.push({ k: 'seg', full: true, key: 'pub', label: 'Room', items: [[0, 'Private'], [1, 'Public']], get: () => (o.pub ? 1 : 0), set: (v) => o.set('pub', v), disabled: dis });
     return rows;
   }

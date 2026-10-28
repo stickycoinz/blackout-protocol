@@ -24,7 +24,8 @@
     uniforms: {
       tDiffuse: { value: null }, uRS: RS.u, uScr: { value: new THREE.Vector2(1, 1) }, uTex: { value: new THREE.Vector2(1, 1) }, uTime: { value: 0 },
       uPix: { value: 1 }, uDither: { value: 0 }, uPat: { value: 1 }, uDStr: { value: 0.6 }, uLevels: { value: 6 },
-      uPalN: { value: 0 }, uPal: { value: Array.from({ length: 8 }, () => new THREE.Vector3()) },
+      uPalN: { value: 0 }, uPal: { value: Array.from({ length: 16 }, () => new THREE.Vector3()) },
+      uTone: { value: 0 }, uToneS: { value: new THREE.Vector3(1, 1, 1) }, uToneM: { value: new THREE.Vector3(1, 1, 1) }, uToneH: { value: new THREE.Vector3(1, 1, 1) },
       uCon: { value: 1 }, uSat: { value: 1 }, uBri: { value: 1 }, uOut: { value: 0 }, uOutW: { value: 1 },
       uVig: { value: 0 }, uGrain: { value: 0 }, uScan: { value: 0 }, uScanSz: { value: 3 },
     },
@@ -32,7 +33,7 @@
     fragmentShader: `
       uniform sampler2D tDiffuse; uniform vec4 uRS; uniform vec2 uScr, uTex; uniform float uTime;
       uniform float uPix, uDither, uPat, uDStr, uLevels, uCon, uSat, uBri, uOut, uOutW, uVig, uGrain, uScan, uScanSz;
-      uniform int uPalN; uniform vec3 uPal[8];
+      uniform int uPalN; uniform vec3 uPal[16]; uniform float uTone; uniform vec3 uToneS, uToneM, uToneH;
       varying vec2 vUv;
       ${RS_GLSL}
       float b2(vec2 a){ a = floor(a); return fract(a.x * 0.5 + a.y * a.y * 0.75); }
@@ -57,11 +58,16 @@
         c *= uBri;
         c = clamp((c - 0.5) * uCon + 0.5, 0.0, 1.0);
         c = clamp(mix(vec3(lum(c)), c, uSat), 0.0, 1.0);
+        if (uTone > 0.0) {                                // split tone: shadows / mids / highlights pushed toward their tint (same brightness)
+          float l = lum(c), ws = 1.0 - smoothstep(0.0, 0.5, l), wh = smoothstep(0.5, 1.0, l);
+          vec3 t = uToneS * ws + uToneM * (1.0 - ws - wh) + uToneH * wh;
+          c = clamp(mix(c, t * l, uTone), 0.0, 1.0);
+        }
         float th = uPat < 0.5 ? b2(px) : uPat < 1.5 ? b4(px) : uPat < 2.5 ? b8(px) : h12(px + fract(uTime) * 91.0);
         float d = (th - 0.5) * uDStr * uDither;
         if (uPalN > 0) {                                  // nearest palette colour after the dither offset (luminance-weighted)
           vec3 q = clamp(c + d * 0.45, 0.0, 1.0), best = uPal[0]; float bd = 1e9;
-          for (int i = 0; i < 8; i++) {
+          for (int i = 0; i < 16; i++) {
             if (i >= uPalN) break;
             vec3 dv = q - uPal[i]; float dd = dot(dv * dv, vec3(0.35, 0.5, 0.15)) + pow(lum(q) - lum(uPal[i]), 2.0) * 0.8;
             if (dd < bd) { bd = dd; best = uPal[i]; }
@@ -90,7 +96,7 @@
   const PAT = { bayer2: 0, bayer4: 1, bayer8: 2, noise: 3 };
   function neutral(L) {
     return L.pixel <= 1 && !L.dither && L.palette === 'none' && Math.abs(L.contrast - 1) < 1e-3 && Math.abs(L.saturation - 1) < 1e-3 &&
-      Math.abs(L.brightness - 1) < 1e-3 && !L.outline && L.vignette <= 0 && L.grain <= 0 && L.scan <= 0;
+      Math.abs(L.brightness - 1) < 1e-3 && !(L.toneStr > 0) && !L.outline && L.vignette <= 0 && L.grain <= 0 && L.scan <= 0;
   }
   const _c = new THREE.Color();
   const BOPOST = window.BOPOST = {
@@ -99,7 +105,9 @@
       BOPOST.last = L; const p = ensure(); const u = U();
       u.uPix.value = Math.round(L.pixel); u.uDither.value = L.dither ? 1 : 0; u.uPat.value = PAT[L.ditherPat] != null ? PAT[L.ditherPat] : 1;
       u.uDStr.value = L.ditherStr; u.uLevels.value = Math.round(L.levels);
-      const P = PALETTES[L.palette]; u.uPalN.value = P ? P.length : 0;
+      const P = L.palette === 'custom' ? (Array.isArray(L.pal) && L.pal.length >= 2 ? L.pal.slice(0, 16) : PALETTES.blackout) : PALETTES[L.palette]; u.uPalN.value = P ? P.length : 0;
+      const tn = (h, v) => { const n = parseInt(String(h || '#808080').slice(1), 16) || 0; let r = (n >> 16) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255; const y = Math.max(0.05, 0.299 * r + 0.587 * g + 0.114 * b); v.set(r / y, g / y, b / y); };
+      u.uTone.value = L.toneStr || 0; tn(L.toneSh, u.uToneS.value); tn(L.toneMid, u.uToneM.value); tn(L.toneHi, u.uToneH.value);
       if (P) P.forEach((h, i) => { _c.set(h); u.uPal.value[i].set(_c.r, _c.g, _c.b); });
       u.uCon.value = L.contrast; u.uSat.value = L.saturation; u.uBri.value = L.brightness;
       u.uOut.value = L.outline ? L.outlineStr : 0; u.uOutW.value = L.outlineW;

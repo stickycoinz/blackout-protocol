@@ -28,12 +28,16 @@
       lamps: num(2.6, 0, 10, 0.1, 'Street lamp intensity'), termGlow: num(1, 0, 4, 0.05, 'Terminal screen glow'),
       muzzleK: num(1, 0, 5, 0.05, 'Muzzle light intensity'), muzzleRange: num(1, 0.2, 4, 0.05, 'Muzzle light range'),
       suppFlash: num(0.35, 0, 1, 0.05, 'Suppressed flash x'),
+      lampColor: col('#ffb35c', 'Street lamp colour'), lampTint: num(0, 0, 1, 0.01, 'Lamp colour strength (0 = built-in)'),
+      moonColor: col('#7d92c8', 'Moonlight colour'), ambColor: col('#3a4a74', 'Ambient sky colour'),
+      termColor: col('#20ffcf', 'Terminal glow colour'), muzzleColor: col('#ffb060', 'Muzzle flash colour'),
     },
     look: {
       pixel: num(1, 1, 16, 1, 'Pixel size (1 = off)'), renderScale: num(1, 0.25, 1, 0.05, 'Render scale'),
       dither: bool(false, 'Dithering'), ditherPat: sel('bayer4', ['bayer2', 'bayer4', 'bayer8', 'noise'], 'Dither pattern'),
       ditherStr: num(0.6, 0, 1, 0.01, 'Dither strength'), levels: num(6, 2, 32, 1, 'Colour levels'),
-      palette: sel('none', ['none', 'blackout', 'mono', 'amber', 'nightvision', 'gameboy', 'cga'], 'Palette / grade'),
+      palette: sel('none', ['none', 'blackout', 'mono', 'amber', 'nightvision', 'gameboy', 'cga', 'custom'], 'Palette / grade'),
+      toneStr: num(0, 0, 1, 0.01, 'Tint strength'), toneSh: col('#1b2a2e', 'Shadow tint'), toneMid: col('#808080', 'Midtone tint'), toneHi: col('#e6dfcc', 'Highlight tint'),
       contrast: num(1, 0.3, 2.5, 0.01, 'Contrast'), saturation: num(1, 0, 2.5, 0.01, 'Saturation'), brightness: num(1, 0.2, 3, 0.01, 'Brightness'),
       outline: bool(false, 'Outlines'), outlineW: num(1, 1, 4, 0.5, 'Outline thickness (px)'), outlineStr: num(0.8, 0, 1, 0.01, 'Outline strength'),
       vignette: num(0, 0, 1.5, 0.01, 'Vignette'), grain: num(0, 0, 0.5, 0.005, 'Film grain'), scan: num(0, 0, 1, 0.01, 'Scanlines'), scanSize: num(3, 1, 8, 1, 'Scanline size (px)'),
@@ -85,9 +89,12 @@
   };
   const DEF_LOADOUT = { merc: { primary: 'm4', primaryAtt: [], secondary: 'm9', secondaryAtt: [] }, spy: { secondary: 'none', secondaryAtt: [], gadgets: { smoke: true, flash: true, knife: true, decoy: true } } };
   const clone = (o) => JSON.parse(JSON.stringify(o));
+  const DEF_PAL = ['#0b0d10', '#1b2a2e', '#3c5d62', '#e6dfcc', '#b3242a']; // custom palette starts as the BLACKOUT one
+  const palOk = (a) => { if (!Array.isArray(a)) return null; const o = a.filter((h) => typeof h === 'string' && /^#[0-9a-fA-F]{6}$/.test(h)).slice(0, 16).map((h) => h.toLowerCase()); return o.length >= 2 ? o : null; };
   function defaults() {
     const v = {};
     for (const s in SCHEMA) { v[s] = {}; for (const k in SCHEMA[s]) v[s][k] = SCHEMA[s][k].d; }
+    v.look.pal = DEF_PAL.slice();
     v.weapons = { edits: {}, custom: {} }; v.atts = { edits: {}, custom: {} }; v.loadout = clone(DEF_LOADOUT); v.lookPresets = {}; v.lightVer = LIGHT_VER;
     return v;
   }
@@ -110,6 +117,7 @@
     const v = defaults(); if (!raw || typeof raw !== 'object') return v;
     if (!(raw.lightVer >= LIGHT_VER) && raw.light && typeof raw.light === 'object') { raw = Object.assign({}, raw, { light: Object.assign({}, raw.light) }); for (const k of OLD_TORCH) delete raw.light[k]; BOCFG_MIGRATED = true; }
     for (const s in SCHEMA) if (raw[s] && typeof raw[s] === 'object') for (const k in SCHEMA[s]) if (k in raw[s]) v[s][k] = vField(SCHEMA[s][k], raw[s][k]);
+    if (raw.look && typeof raw.look === 'object') { const pp = palOk(raw.look.pal); if (pp) v.look.pal = pp; }
     const soundOpts = gunSoundList(), modelOpts = gunModelList();
     const wfx = (o) => { const r = vFields(WF, o); if ('sound' in r && !soundOpts.includes(o.sound)) delete r.sound; else if (o && o.sound) r.sound = o.sound; if (o && modelOpts.includes(o.model)) r.model = o.model; else delete r.model; return r; };
     if (raw.weapons && typeof raw.weapons === 'object') {
@@ -141,7 +149,7 @@
     }
     if (raw.lookPresets && typeof raw.lookPresets === 'object') {
       let n = 0;
-      for (const name in raw.lookPresets) { if (n++ > 30) break; const p = raw.lookPresets[name], o = {}; for (const k in SCHEMA.look) o[k] = vField(SCHEMA.look[k], p && p[k]); v.lookPresets[nameOk(name, 'preset')] = o; }
+      for (const name in raw.lookPresets) { if (n++ > 30) break; const p = raw.lookPresets[name], o = {}; for (const k in SCHEMA.look) o[k] = vField(SCHEMA.look[k], p && p[k]); o.pal = palOk(p && p.pal) || DEF_PAL.slice(); v.lookPresets[nameOk(name, 'preset')] = o; }
     }
     return v;
   }
@@ -270,7 +278,12 @@
     try { if (typeof csm !== 'undefined' && csm) for (const l of csm.lights) l.intensity = L.moon; } catch (e) {}
     try { scene.fog.density = L.fogD * 1.0; scene.fog.color.set(L.fogColor); } catch (e) {}
     try { if (LIGHT.nyL) WMU.uVolL.value.x = LAMP_MAX * L.lamps; } catch (e) {}
-    try { if (MAT.boScreen) MAT.boScreen.color.setRGB(0.3 * L.termGlow, 2.4 * L.termGlow, 1.95 * L.termGlow); } catch (e) {}
+    const rgb = (h) => { const n = parseInt(h.slice(1), 16); return [(n >> 16) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255]; };
+    try { if (MAT.boScreen) { const t = rgb(L.termColor), k = 2.4 * L.termGlow; MAT.boScreen.color.setRGB(t[0] * k, t[1] * k, t[2] * k); } } catch (e) {}
+    // pass 14: light colours (lamp pools are recoloured in the shader, see VOL_L in 02c-materials.js)
+    try { const c = rgb(L.lampColor); WMU.uVolLC.value.set(c[0], c[1], c[2], L.lampTint); } catch (e) {}
+    try { if (typeof csm !== 'undefined' && csm) for (const l of csm.lights) l.color.set(L.moonColor); } catch (e) {}
+    try { hemi.color.set(L.ambColor); } catch (e) {}
   }
   /* flashlight battery: drains while on, recharges while off; empty switches it off */
   function batteryTick(dt) {

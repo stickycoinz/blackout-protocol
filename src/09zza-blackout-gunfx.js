@@ -13,8 +13,8 @@
   const L = () => (window.BOCFG && BOCFG.v && BOCFG.v.light) || {};
   const num = (v, d) => (Number.isFinite(+v) ? +v : d);
   function syncMuz() {
-    if (on()) { const l = L(); MUZ.k = num(l.muzzleK, 1); MUZ.range = num(l.muzzleRange, 1); MUZ.supp = MUZ.suppFx = Math.max(0, Math.min(1, num(l.suppFlash, 0.35))); }
-    else { MUZ.k = 1; MUZ.range = 1; MUZ.supp = 0; MUZ.suppFx = 0; } // Riposte: suppressed guns stay dark
+    if (on()) { const l = L(); MUZ.k = num(l.muzzleK, 1); MUZ.range = num(l.muzzleRange, 1); MUZ.supp = MUZ.suppFx = Math.max(0, Math.min(1, num(l.suppFlash, 0.35))); MUZ.col = /^#[0-9a-f]{6}$/i.test(l.muzzleColor || '') ? parseInt(l.muzzleColor.slice(1), 16) : 0xffb060; }
+    else { MUZ.k = 1; MUZ.range = 1; MUZ.supp = 0; MUZ.suppFx = 0; MUZ.col = 0xffb060; } // Riposte: suppressed guns stay dark
   }
   const _ml = muzzleLight, _dir = new V3();
   muzzleLight = function (pos, silent, I, D, dur, ent) {

@@ -39,6 +39,8 @@ const WMU = {
   // couches des lampes empilées au-dessus du volume (02e-light.js) : force (0 : aucune lampe), hauteur du volume, des couches des lampes,
   // et du tout (en cellules) ; VOL_Q et VOL_L donnent les coordonnées de lecture
   uVolL: { value: new THREE.Vector4(0, 1, 0, 1) },
+  // lamp colour override (BLACKOUT editor): rgb, strength (0 = the baked lamp colour)
+  uVolLC: { value: new THREE.Vector4(1, 1, 1, 0) },
 };
 /* Courbe du ciel visible (part de ciel du volume cuit, 0 à 1) : en S autour de 0,5, elle assombrit les lieux couverts (souk, maisons, passages)
    et éclaircit les rues dégagées ; uSkyC.x = 1 la laisse telle quelle. Même courbe sur le processeur : skyCurve (01-core.js n'en dépend pas). */
@@ -47,10 +49,13 @@ function skyCurve(s, k = WMU.uSkyC.value.x) { const a = Math.pow(s, k), b = Math
 /* Lecture du volume cuit au point q (coordonnées du volume, 0 à 1) : la hauteur est bornée sous les couches des lampes */
 const VOL_Q = '#define VOL_Q(q) vec3((q).x, (q).z, min((q).y * uVolL.y, uVolL.y - 0.5) / uVolL.w)';
 /* Lumière des lampes au point q : éclairement (même échelle que la lumière indirecte de three.js), racine gardée dans la texture */
-const VOL_L = `vec3 volLamp(vec3 q) {
+const VOL_L = `uniform vec4 uVolLC;
+vec3 volLamp(vec3 q) {
   if (uVolL.x <= 0.0) return vec3(0.0);
   vec3 e = texture(tVol, vec3(q.x, q.z, (uVolL.y + clamp(q.y * uVolL.y, 0.5, uVolL.z - 0.5)) / uVolL.w)).rgb;
-  return e * e * uVolL.x;
+  vec3 l = e * e * uVolL.x;
+  if (uVolLC.w > 0.0) { float y = dot(l, vec3(0.299, 0.587, 0.114)); vec3 t = uVolLC.rgb / max(dot(uVolLC.rgb, vec3(0.299, 0.587, 0.114)), 0.05); l = mix(l, y * t, uVolLC.w); }
+  return l;
 }`;
 /* Relief compilé si le profil de départ n'est pas Basse (un passage en Basse en cours de partie l'éteint par uniforme) */
 const POM = { on: false };

@@ -235,13 +235,13 @@ body.bo-load #lockPrompt,body.bo-load #boHud,body.bo-load #cd{display:none!impor
       el('div', { class: 'grp' }, el('div', { class: 'grid' }, el('button', { type: 'button', class: 'gun on', disabled: true }, 'M9 SD', el('small', null, 'PISTOL · SUPPRESSED')))),
       el('div', { class: 'note' }, 'Every spy carries the suppressed M9. It is the only gun a spy can take: quiet enough that bots only hear it up close.'),
       el('div', { class: 'note' }, 'Mercs wear body armor: a round to the body or limbs does ' + S.armorDmg + ' damage. A headshot from ' + S.headKillM + ' m or closer kills outright; farther out it does normal M9 head damage.'),
-      el('div', { class: 'note' }, 'Fire with LMB, aim with RMB. Takedowns stay on ' + KK('hack', 'E') + ' / ' + KK('takedown', 'F') + ', the throwing knife on ' + KK('tknife', 'X') + '. The editor (F10, Spy kit) can unlock other sidearms.')];
+      el('div', { class: 'note' }, 'Fire with LMB, aim with RMB. Takedowns stay on ' + KK('hack', 'E') + ' / ' + KK('takedown', 'F') + ', the throwing knife on ' + KK('tknife', 'X') + '.')];
   }
   function gadgets() {
     const G = L().spy.gadgets, S = SP(), box = el('div', { class: 'gad' });
     for (const [k, n, key0, nk, desc] of GADS) { const key = window.BOKEYS ? (BOKEYS.K({ smoke: 'smoke', flash: 'flashbang', knife: 'tknife', decoy: 'decoy' }[k]) + (k === 'knife' && !(BOCFG.spyArmed && BOCFG.spyArmed()) ? ' / LMB' : '')) : key0; box.append(el('button', { type: 'button', class: 'gcard' + (G[k] ? ' on' : ''), onclick: () => { G[k] = !G[k]; BOCFG.save(); render(); } },
       el('em', null, key), el('b', null, n), (G[k] ? 'EQUIPPED · x' + S[nk] : 'LEFT BEHIND'), el('small', null, desc))); }
-    return [el('h4', null, 'GADGETS'), box, el('div', { class: 'note' }, 'Charges per life come from the editor (F10, Spy kit). Every gadget is free: take all four.')];
+    return [el('h4', null, 'GADGETS'), box, el('div', { class: 'note' }, 'Charges per life are set by the host. Every gadget is free: take all four.')];
   }
   function render() {
     if (!root) return;
@@ -268,7 +268,7 @@ body.bo-load #lockPrompt,body.bo-load #boHud,body.bo-load #cd{display:none!impor
     const mid = el('div', { class: 'col' }, ...(ref.locked ? lockedGun() : gunGrid(ref)));
     const right = el('div', { class: 'col' }, ...detail(ref), ...(spy ? gadgets() : []));
     root.append(el('main', null, left, mid, right));
-    root.append(el('footer', null, el('div', { class: 'hint' }, el('b', null, 'F9'), 'close ', el('b', null, 'ENTER'), menu ? 'save ' : 'deploy ', el('b', null, menu ? 'ESC' : 'F10'), menu ? 'back   · 18 guns, every attachment, no unlocks' : 'editor   · 18 guns, every attachment, no unlocks'),
+    root.append(el('footer', null, el('div', { class: 'hint' }, el('b', null, 'F9'), 'close ', el('b', null, 'ENTER'), menu ? 'save ' : 'deploy ', (menu || (window.BOADMIN && BOADMIN.can())) ? el('b', null, menu ? 'ESC' : 'F10') : null, (menu ? 'back' : (window.BOADMIN && BOADMIN.can()) ? 'editor' : '') + '   · 18 guns, every attachment, no unlocks'),
       el('button', { type: 'button', class: 'deploy', onclick: () => deploy() }, menu ? 'SAVE' : pre ? 'DEPLOY' : 'EQUIP')));
   }
   function setRole(r) {
