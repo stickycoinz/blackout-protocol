@@ -101,7 +101,7 @@ function pfrReport() {
   // cadence de l'écran : l'intervalle le plus courant parmi les plus courts (les images à l'heure)
   const refresh = N ? 1000 / pct(0.05) : 0;
   const L = [
-    `Riposte: Frontline ${bm ? bm.content : '?'} · performance report · ${PFR.date}`,
+    `BLACKOUT PROTOCOL ${bm ? bm.content : '?'} · performance report · ${PFR.date}`,
     navigator.userAgent,
     `screen ${screen.width}x${screen.height} · window ${innerWidth}x${innerHeight} · DPR ${devicePixelRatio} · GPU ${GPU.name || '?'} (class ${GPU.tier}) · cores ${navigator.hardwareConcurrency || '?'}${navigator.deviceMemory ? ' · memory ' + navigator.deviceMemory + ' GB' : ''}`,
     `settings: quality ${Settings.quality} (now ${RQ.tier} at scale ${f2(RQ.scale)}) · fps cap ${Settings.fpsMax === 'half' ? 'half the display (' + (VSYNC.ms ? Math.round(500 / VSYNC.ms) : '?') + ')' : +Settings.fpsMax || 'none'} · power saving ${Settings.eco ? 'on' : 'off'} · dynamic resolution ${Settings.dynres === false ? 'off' : 'on'} · AO ${Settings.ao ? 'on' : 'off'} · sun rays ${Settings.rays ? 'on' : 'off'} · grass ${Settings.grass === false ? 'off' : 'on'} · shadows ${NO_SHADOWS ? 'off' : 'on'} · GPU timer ${GPUT ? 'on' : 'off'}`,

@@ -87,7 +87,7 @@ def socle_js(key,body):
     name="tex/"+key+"."+hashlib.sha1(body.encode("utf-8")).hexdigest()[:8]+".js"
     if not os.path.exists("dist/"+name): open("dist/"+name,"w",encoding="utf-8").write(body)
     socle[key]=name
-socle_js("socle-ui","(function(s){s.setProperty('--key-art',"+json.dumps("url("+data_uri("assets/menu-bg.webp")+")")+");s.setProperty('--logo',"+json.dumps("url("+data_uri("assets/logo.webp")+")")+")})(document.documentElement.style);\n")
+socle_js("socle-ui","(function(s){s.setProperty('--key-art',"+json.dumps("url("+data_uri("assets/menu-bg.webp")+")")+")})(document.documentElement.style);\n")
 tissus={k:data_uri(f"assets/tenue/{k}.webp") if os.path.exists(f"assets/tenue/{k}.webp") else "" for k in ("tissus","teinte")}
 socle_js("socle","window.SOCLE="+json.dumps({"depth":data_uri("assets/menu-depth.webp"),"grain":data_uri(grain) if os.path.exists(grain) else "",**tissus,"anim":anim,
     "rankup":base64.b64encode(open("assets/rankup.mp3","rb").read()).decode("ascii")},separators=(",",":"))+";\n")
@@ -177,7 +177,7 @@ for k in ("favicon-64","favicon-96","apple-touch-icon","icon-192","icon-512"):
 # Aperçu des liens partagés (balises og: de shell.html) : assets/apercu.jpg (composée par tools/dev/apercu.py), copiée comme les icônes avec
 # une empreinte (cache indéfini). SITE est l'adresse publique de référence du jeu (lien canonique, og:url, og:image) : les autres
 # adresses (sans www, préversions, anciennes adresses .vercel.app) y renvoient ou n'ont pas à être référencées.
-SITE="https://www.playriposte.com"
+SITE="https://stickycoinz.github.io/blackout-protocol"  # BLACKOUT pass 18: our published address (was playriposte.com)
 data=open("assets/apercu.jpg","rb").read(); apercu="icons/apercu."+hashlib.sha1(data).hexdigest()[:8]+".jpg"
 if not os.path.exists("dist/"+apercu): open("dist/"+apercu,"wb").write(data)
 for f in glob.glob("dist/icons/apercu.*.jpg"):
@@ -186,7 +186,7 @@ html=html.replace("__SITE__",SITE).replace("__APERCU__",apercu)
 # Manifeste de l'application installable (Android : « Ajouter à l'écran d'accueil » ouvre le jeu en plein écran, en paysage, sans barre d'adresse)
 for k in ("maskable-192","maskable-512"):
     if k not in icons: raise SystemExit("icône manquante : assets/icon/"+k+".png")
-json.dump({"id":"/","name":"Riposte: Frontline","short_name":"Riposte","description":"FPS en ligne dans le navigateur : solo contre des bots ou en ligne entre amis.",
+json.dump({"id":"/","name":"BLACKOUT PROTOCOL","short_name":"BLACKOUT","description":"Spies vs mercs in the browser: solo against bots or online with friends.",
     "start_url":"./","scope":"./","display":"fullscreen","display_override":["fullscreen","standalone"],"orientation":"landscape","categories":["games"],
     "background_color":"#0E110D","theme_color":"#0E110D","prefer_related_applications":False,
     "icons":[{"src":icons["icon-192"],"sizes":"192x192","type":"image/png","purpose":"any"},{"src":icons["icon-512"],"sizes":"512x512","type":"image/png","purpose":"any"},

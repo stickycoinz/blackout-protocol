@@ -96,7 +96,7 @@ function netdVerdict() {
 }
 function netdReport() {
   const c = Object.keys(NETD.cand).map((k) => k + ' x' + NETD.cand[k]).join(', ') || 'aucun';
-  return ['Rapport de connexion, Riposte: Frontline (protocole ' + NET_PROTO + ')', 'Rôle : ' + (NETD.role || '-') + ', salon ' + (NETD.code || '-') + ', page ' + location.host, 'Navigateur : ' + navigator.userAgent,
+  return ['Rapport de connexion, BLACKOUT PROTOCOL (protocole ' + NET_PROTO + ')', 'Rôle : ' + (NETD.role || '-') + ', salon ' + (NETD.code || '-') + ', page ' + location.host, 'Navigateur : ' + navigator.userAgent,
     'Chemins trouvés : ' + c, (netViaServer() ? 'Serveur de jeu : ' : 'Relais de secours : ') + (NETD.rel === 'off' ? 'non configuré' : NETD.rel), 'Diagnostic : ' + netdVerdict(), '', ...NETD.log].join('\n');
 }
 function netdShow(on) {
@@ -1375,7 +1375,7 @@ const NET_PAGES = {
       { k: 'btn', key: 'code', primary: true, label: done('code', _t('Code copié')) || done('code!', _t('Copie impossible')) || _t('Copier le code'), run: () => netCopy('code') },
       { k: 'btn', key: 'link', label: done('link', _t('Lien copié')) || done('link!', _t('Copiez-le à la main')) || _t('Copier le lien'), run: () => netCopy('link') },
     ];
-    if (navigator.share) rows.push({ k: 'btn', key: 'share', label: _t('Partager'), run: () => navigator.share({ title: 'Riposte: Frontline', text: _t('Rejoignez mon salon {0}', netCodeNow()), url: netLink() }).catch(() => {}) });
+    if (navigator.share) rows.push({ k: 'btn', key: 'share', label: _t('Partager'), run: () => navigator.share({ title: 'BLACKOUT PROTOCOL', text: _t('Rejoignez mon salon {0}', netCodeNow()), url: netLink() }).catch(() => {}) });
     return { head: _t('Inviter des amis'), rows };
   },
   chat: () => { CHAT.unread = 0; return { head: _t('Discussion'), cls: 'chat', rows: [{ k: 'node', node: $('netChatLog') }, { k: 'text', key: 'msg', label: _t('Message'), input: $('netChatIn') }] }; }, // ouverte : tout est lu

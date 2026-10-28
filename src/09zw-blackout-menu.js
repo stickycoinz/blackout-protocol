@@ -25,8 +25,8 @@ body.bo-ui #scr-main .main-top,body.bo-ui #scr-main [data-go=options],body.bo-ui
 body.bo-ui #scr-main .mfoot>*:not(#verTag),body.bo-ui #scr-main #pwaCard{display:none!important}
 body.bo-ui #scr-main .mfoot{justify-content:flex-end}
 body.bo-ui #scr-main #verTag{font:500 11px var(--bo-mono);letter-spacing:.2em;color:var(--mute)}
-body.bo-ui #scr-main .logo{font-family:var(--bo-mono)!important;color:#e8eef2!important;letter-spacing:.42em!important;text-shadow:0 0 18px rgba(159,216,255,.35);animation:boGlitch 5s 1s infinite;justify-content:flex-start!important}
-body.bo-ui #scr-main .brand::after{content:"BLACKOUT PROTOCOL // SPIES VS MERCS";display:block;margin-top:8px;font:600 12px var(--bo-mono);letter-spacing:.32em;color:var(--bo-a)}
+body.bo-ui #scr-main .logo{font-family:var(--bo-mono)!important;color:#e8eef2!important;letter-spacing:.42em!important;text-shadow:0 0 18px rgba(159,216,255,.35);animation:boGlitch 5s 1s infinite;justify-content:flex-start!important;align-items:flex-start!important}
+body.bo-ui #scr-main .brand::after{content:"// SPIES VS MERCS";display:block;margin-top:8px;font:600 12px var(--bo-mono);letter-spacing:.32em;color:var(--bo-a)}
 body.bo-ui #scr-main .mbtn{font-family:var(--bo-mono);border-radius:0;border-left:2px solid transparent;clip-path:none}
 body.bo-ui #scr-main .mbtn b{font:800 30px/1.05 var(--bo-mono);letter-spacing:.24em}
 body.bo-ui #scr-main .mbtn span{font:500 12px var(--bo-mono);letter-spacing:.14em;color:var(--dim);text-transform:uppercase}

@@ -54,7 +54,7 @@ function pwaRender() {
   box.classList.toggle('steps', L.length > 0); // gestes à la main : sur écran bas, ils prennent la place des raisons
   box.classList.toggle('plain', m === 'done' || m === 'installed'); // rien à installer : ni raisons ni bouton
   $('poTitle').textContent = m === 'done' ? _t('C\u0027est installé !') : m === 'installed' ? _t('Le jeu est déjà installé') : PWA.title0;
-  $('poLead').textContent = m === 'done' ? _t('Ouvrez Riposte: Frontline depuis son icône sur votre écran d\u0027accueil.') : m === 'installed' ? _t('Ouvrez-le depuis son icône. Plein écran, même progression.') : PWA.lead0;
+  $('poLead').textContent = m === 'done' ? _t('Ouvrez BLACKOUT PROTOCOL depuis son icône sur votre écran d\u0027accueil.') : m === 'installed' ? _t('Ouvrez-le depuis son icône. Plein écran, même progression.') : PWA.lead0;
   note.textContent = m === 'ios' ? _t('Sur iPhone et iPad, le jeu se joue en paysage. Désactivez le verrouillage de l\u0027orientation.') : '';
   note.classList.toggle('hidden', m !== 'ios');
   const go = $('poGo'); go.classList.toggle('hidden', m !== 'prompt' && m !== 'wait'); go.disabled = m === 'wait'; // en attente de l'annonce du navigateur : le bouton n'est pas encore actif

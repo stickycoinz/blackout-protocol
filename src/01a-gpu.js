@@ -448,7 +448,7 @@ function gpuAudioLine() {
 function gpuReportText(withProbes) {
   const bm = document.querySelector('meta[name="cod-build"]'), m = renderer.info.memory;
   const L = [
-    'Riposte: Frontline ' + (bm ? bm.content : '?') + ' · ' + new Date().toISOString(),
+    'BLACKOUT PROTOCOL ' + (bm ? bm.content : '?') + ' · ' + new Date().toISOString(),
     navigator.userAgent,
     `screen ${screen.width}x${screen.height} · window ${innerWidth}x${innerHeight} · DPR ${devicePixelRatio} · touch ${COARSE ? 'yes' : 'no'} · installed ${typeof PWA !== 'undefined' && PWA.standalone ? 'yes' : 'no'}`,
     ...(gpuLostNow() || !GPUX.info ? GPUX.info || [] : gpuInfoLines()), // perdu : les valeurs relevées au chargement, le pilote ne répond plus
@@ -498,6 +498,6 @@ function repShow(title, lead, txt) {
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, () => { const r = document.createRange(); r.selectNodeContents($$('grTxt')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); });
     else { const r = document.createRange(); r.selectNodeContents($$('grTxt')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
   });
-  on('grShare', () => { if (navigator.share) navigator.share({ title: 'Riposte: Frontline', text: $$('grTxt').textContent }).catch(() => { /* annulé */ }); });
+  on('grShare', () => { if (navigator.share) navigator.share({ title: 'BLACKOUT PROTOCOL', text: $$('grTxt').textContent }).catch(() => { /* annulé */ }); });
   if (!navigator.share) { const b = $$('grShare'); if (b) b.classList.add('hidden'); }
 }

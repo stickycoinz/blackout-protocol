@@ -1,8 +1,8 @@
 {
  "id": "/",
- "name": "Riposte: Frontline",
- "short_name": "Riposte",
- "description": "FPS en ligne dans le navigateur : solo contre des bots ou en ligne entre amis.",
+ "name": "BLACKOUT PROTOCOL",
+ "short_name": "BLACKOUT",
+ "description": "Spies vs mercs in the browser: solo against bots or online with friends.",
  "start_url": "./",
  "scope": "./",
  "display": "fullscreen",
@@ -19,25 +19,25 @@
  "prefer_related_applications": false,
  "icons": [
   {
-   "src": "icons/icon-192.06921713.png",
+   "src": "icons/icon-192.d1b67861.png",
    "sizes": "192x192",
    "type": "image/png",
    "purpose": "any"
   },
   {
-   "src": "icons/icon-512.98d6b94c.png",
+   "src": "icons/icon-512.bbd0e74b.png",
    "sizes": "512x512",
    "type": "image/png",
    "purpose": "any"
   },
   {
-   "src": "icons/maskable-192.bdc37157.png",
+   "src": "icons/maskable-192.8cf14b55.png",
    "sizes": "192x192",
    "type": "image/png",
    "purpose": "maskable"
   },
   {
-   "src": "icons/maskable-512.571536d3.png",
+   "src": "icons/maskable-512.f9a02440.png",
    "sizes": "512x512",
    "type": "image/png",
    "purpose": "maskable"

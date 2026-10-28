@@ -210,7 +210,7 @@ function socNotifText(n) {
   if (n.kind === 'friend_accepted') return _t('{0} a accepté votre demande d\u0027ami.', who);
   if (n.kind === 'salon_invite') return _t('{0} vous a invité dans son salon {1}.', who, esc(String(n.data && n.data.code || '')));
   if (n.kind === 'levelup') return _t('Vous avez atteint le niveau {0} !', esc(String(n.data && n.data.level || '')));
-  if (n.kind === 'welcome') return _t('Bienvenue dans Riposte: Frontline ! Retrouvez les autres joueurs dans le classement et ajoutez-les en ami.');
+  if (n.kind === 'welcome') return _t('Bienvenue dans BLACKOUT PROTOCOL ! Retrouvez les autres joueurs dans le classement et ajoutez-les en ami.');
   if (n.kind === 'mod_photo') return _t('La modération a retiré votre photo de profil. Elle ne respectait pas les règles du jeu.');
   if (n.kind === 'mod_name') return _t('La modération a remis votre nom d\u0027affichage à votre nom d\u0027utilisateur. L\u0027ancien ne respectait pas les règles du jeu.');
   if (n.kind === 'mod_board') return _t('La modération vous a retiré du classement (triche ou abus).');
