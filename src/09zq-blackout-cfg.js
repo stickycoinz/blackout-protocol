@@ -45,6 +45,8 @@
       botDelay: num(12, 0, 60, 1, 'Spy bots wait before first hack (s)'),
       hackNoiseM: num(35, 5, 150, 1, 'Hack noise range m'), hackNoiseVol: num(1, 0, 3, 0.05, 'Hack noise volume'),
       hackAlert: sel('hearing', ['hearing', 'always', 'off'], 'Merc alert marker'),
+      roundsToWin: num(2, 1, 9, 1, 'Rounds to win'), respawn: bool(false, 'Respawn (off = one life per round)'), respawnDelay: num(5, 1, 60, 1, 'Respawn delay (s)'),
+      spyLives: num(0, 0, 20, 1, 'Spy lives per round (0 = unlimited)'), specDelay: num(3, 0, 15, 0.5, 'Death cam before spectating (s)'), intermission: num(6, 2, 30, 1, 'Pause between rounds (s)'),
       mercs: num(2, 1, 6, 1, 'Mercs (incl. player)'), spies: num(2, 1, 6, 1, 'Spies (incl. player)'),
       rollIFrames: num(0.35, 0, 0.6, 0.01, 'Roll i-frames (s, roll lasts 0.6)'), rollCd: num(1.1, 0.6, 6, 0.05, 'Roll cooldown (s)'), rollDist: num(3.1, 1, 8, 0.1, 'Roll distance (m)'),
     },

@@ -52,7 +52,7 @@
 
   /* one life: no respawns in BLACKOUT */
   if (typeof respawnPlayer === 'function') {
-    const _rp = respawnPlayer;
+    const _rp = respawnPlayer; R._respawnPlayer = _rp;
     respawnPlayer = function () { if (boOn()) { if (PL.ent) { PL.ent.alive = false; PL.ent.respawnT = Infinity; } return; } return _rp.apply(this, arguments); };
   }
 
@@ -96,7 +96,7 @@
   // scoreboards: bots switched off for this round are not listed; the mode reads as BLACKOUT, not team deathmatch
   const _boardList = boardList;
   boardList = function (t) { const l = _boardList(t); return boOn() ? l.filter((x) => !x.off) : l; };
-  const _modeDef = modeDef, BO_MODE_DEF = Object.assign({}, MODES.tdm, { name: 'Spies vs Mercs' });
+  const _modeDef = modeDef, BO_MODE_DEF = Object.assign({}, MODES.tdm, { name: 'BLACKOUT · Spies vs Mercs' });
   modeDef = function () { return boOn() && !MATCH.online ? BO_MODE_DEF : _modeDef(); };
   finKicker = function () { return boOn() ? (R.kicker || 'TIME UP') : _finKicker(); };
   function endRound(team, kicker, reason) {
@@ -195,7 +195,7 @@
     hudShow(true);
     if (R.onSetup) { try { R.onSetup(); } catch (err) { console.warn('BO setup hook', err); } }
   }
-  R.setup = boSetupRound;
+  R.setup = boSetupRound; R.placeAt = placeAt; R.kaySpy = kaySpy; R.unKay = unKay; R.spawnCount = (team) => spawnList(team).length;
 
   /* ---------- team names / score line ---------- */
   const TEAM_NAMES0 = TEAM_NAMES.slice();
@@ -621,9 +621,9 @@
     MATCH.score[0] = sd; MATCH.score[1] = hackedCount();
     const scA = document.getElementById('scA'), scB = document.getElementById('scB'), lim = document.getElementById('scLim');
     if (scA) scA.textContent = String(sd); if (scB) scB.textContent = String(hackedCount());
-    if (lim) lim.textContent = 'HACK ' + R.hackNeed + ' + EXTRACT · 1 LIFE';
+    if (lim) lim.textContent = R.limText ? R.limText() : 'HACK ' + R.hackNeed + ' + EXTRACT · 1 LIFE';
     // wins
-    if (!R.roundOver && teamAlive(SPY).length === 0) endRound(MERC, 'SPIES ELIMINATED', 'Every spy is down');
+    if (!R.roundOver && teamAlive(SPY).length === 0 && !(R.spyCanReturn && R.spyCanReturn())) endRound(MERC, 'SPIES ELIMINATED', 'Every spy is down');
     hudTick();
     R.prevKeys = Object.assign({}, KEYS);
   }
