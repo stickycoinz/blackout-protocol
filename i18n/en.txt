@@ -548,7 +548,7 @@ Nouvelle version du jeu disponible. Elle se chargera en quittant le salon. ⇒ A
 Nouvelle version du jeu disponible. Elle se chargera à la fin de la partie. ⇒ A new version of the game is available. It will load when the match ends.
 
 # 09i-chat.js
-Aucun message. Appuyez sur T pour écrire. ⇒ No messages. Press T to write.
+Aucun message. Appuyez sur {0} pour écrire. ⇒ No messages. Press {0} to write.
 
 # 09i-modes.js
 Match à mort par équipe ⇒ Team deathmatch
