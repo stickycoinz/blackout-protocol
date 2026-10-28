@@ -1,7 +1,7 @@
 /* ==========================================================================
    STEAM DECK (README « Steam Deck »)
    - En mode Bureau, dans le navigateur du Steam Deck (deckLooksLike, 01-core.js) : une carte du menu principal propose d'installer le
-     jeu dans Steam. Elle télécharge « Installer Riposte.desktop », un raccourci qui lance dist/deck/installer.sh depuis l'adresse de la
+     jeu dans Steam. Elle télécharge « Installer BLACKOUT PROTOCOL.desktop », un raccourci qui lance dist/deck/installer.sh depuis l'adresse de la
      page (la préversion installe la préversion) : un double-clic dessus installe tout et ramène au mode Jeu.
    - Lancé depuis Steam (?deck=1, DECK) : pas de bouton Plein écran (le lanceur l'est déjà) ; tant qu'aucune manette n'a répondu, la
      carte dit quelle disposition choisir dans Steam (Chrome ne voit pas la manette sous une disposition clavier et souris) ; un champ de
@@ -14,13 +14,13 @@ const DECK_SITE = 'https://www.playriposte.com'; // adresse installée quand la 
    voit l'installation avancer. Exec sans guillemet, dollar ni barre oblique inverse dans l'argument (spécification des fichiers .desktop). */
 function deckInstallFile() {
   const site = /^https?:$/.test(location.protocol) ? location.origin : DECK_SITE;
-  return '[Desktop Entry]\nType=Application\nName=' + _t('Installer Riposte') + '\nIcon=system-software-install\nTerminal=true\n'
+  return '[Desktop Entry]\nType=Application\nName=' + _t('Installer BLACKOUT PROTOCOL') + '\nIcon=system-software-install\nTerminal=true\n'
     + `Exec=bash -c "curl -fsSL --create-dirs ${site}/deck/installer.sh -o ~/.cache/riposte-installer.sh && bash ~/.cache/riposte-installer.sh ${site}"\n`; // dans le dossier du joueur, pas dans /tmp (nom connu d'avance, partagé)
 }
 function deckDownload() {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([deckInstallFile()], { type: 'application/x-desktop' }));
-  a.download = _t('Installer Riposte') + '.desktop';
+  a.download = _t('Installer BLACKOUT PROTOCOL') + '.desktop';
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   DECK_UI.asked = true; deckCard();

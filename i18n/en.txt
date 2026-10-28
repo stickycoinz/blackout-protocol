@@ -667,7 +667,7 @@ Conditions d'utilisation ⇒ Terms of use
 Mentions légales ⇒ Legal notice
 Version du {0} ⇒ Version of {0}
 1. Objet ⇒ 1. Purpose
-Riposte: Frontline est un jeu de tir en ligne gratuit, joué dans le navigateur. Ces conditions encadrent l'usage du jeu et du compte joueur. Jouer en Solo ne demande pas de compte ; le multijoueur et la progression, si. ⇒ Riposte: Frontline is a free online shooter played in the browser. These terms govern the use of the game and of the player account. Playing Solo does not require an account; multiplayer and progression do.
+BLACKOUT PROTOCOL est un jeu de tir en ligne gratuit, joué dans le navigateur. Ces conditions encadrent l'usage du jeu et du compte joueur. Jouer en Solo ne demande pas de compte ; le multijoueur et la progression, si. ⇒ BLACKOUT PROTOCOL is a free online shooter played in the browser. These terms govern the use of the game and of the player account. Playing Solo does not require an account; multiplayer and progression do.
 2. Compte ⇒ 2. Account
 3. Comportement ⇒ 3. Conduct
 Sont interdits : tricher (modifier le jeu, falsifier des résultats ou de l'expérience, exploiter une faille), usurper une identité (y compris celle de l'équipe du jeu), choisir un nom d'utilisateur, un nom d'affichage ou une photo de profil injurieux, haineux, sexuels ou trompeurs, harceler d'autres joueurs, y compris dans la discussion d'un salon, et signaler un joueur à tort de façon répétée. Les mots grossiers ou haineux sont refusés dans les noms et masqués dans la discussion. Dans un salon, chacun peut masquer un joueur et l'hôte peut l'exclure ; tout joueur peut en signaler un autre depuis son profil. La modération peut retirer une photo, remettre un nom d'affichage à son nom d'utilisateur, retirer un joueur du classement, remettre une progression à zéro, suspendre ou supprimer un compte qui ne respecte pas ces règles. Dans Communauté, les messages suivent les mêmes règles, sans lien ni publicité. L'équipe peut masquer ou effacer un message qui ne les respecte pas. ⇒ The following are forbidden: cheating (modifying the game, faking results or experience, exploiting a flaw), impersonating someone (including the game team), choosing an offensive, hateful, sexual or misleading username, display name or profile picture, harassing other players, including in a room's chat, and repeatedly reporting players without reason. Offensive or hateful words are refused in names and masked in chat. In a room, anyone can mute a player and the host can remove them; any player can report another from their profile. The moderators may remove a picture, reset a display name to the username, remove a player from the leaderboard, reset progression, suspend or delete an account that breaks these rules. In Community, messages follow the same rules, with no links or advertising. The team may hide or delete a message that breaks them.
@@ -771,7 +771,7 @@ Arme en 3D, flèches pour la faire tourner ⇒ 3D weapon, arrow keys to rotate i
 ajouter un accessoire ⇒ add an attachment
 
 # shell.html
-Riposte: Frontline, FPS gratuit dans le navigateur ⇒ Riposte: Frontline, free FPS in your browser
+BLACKOUT PROTOCOL, FPS gratuit dans le navigateur ⇒ BLACKOUT PROTOCOL, free FPS in your browser
 Vue du jeu ⇒ Game view
 Chargement de three.js ⇒ Loading three.js
 Menu principal ⇒ Main menu
@@ -1100,7 +1100,7 @@ Partager ⇒ Share
 # Mobile : installation d'abord (src/09r-pwa.js, fenêtre d'installation de shell.html)
 C'est installé ! ⇒ Installed!
 Le jeu est déjà installé ⇒ The game is already installed
-Ouvrez Riposte: Frontline depuis son icône sur votre écran d'accueil. ⇒ Open Riposte: Frontline from its icon on your home screen.
+Ouvrez BLACKOUT PROTOCOL depuis son icône sur votre écran d'accueil. ⇒ Open BLACKOUT PROTOCOL from its icon on your home screen.
 Ouvrez-le depuis son icône. Plein écran, même progression. ⇒ Open it from its icon. Full screen, same progress.
 Jouer dans le navigateur quand même ⇒ Play in the browser anyway
 Plus tard ⇒ Later
@@ -1180,7 +1180,7 @@ Aucune partie enregistrée. ⇒ No match recorded.
 {0} vous a envoyé une demande d'ami. ⇒ {0} sent you a friend request.
 {0} a accepté votre demande d'ami. ⇒ {0} accepted your friend request.
 Vous avez atteint le niveau {0} ! ⇒ You reached level {0}!
-Bienvenue dans Riposte: Frontline ! Retrouvez les autres joueurs dans le classement et ajoutez-les en ami. ⇒ Welcome to Riposte: Frontline! Find the other players in the leaderboard and add them as friends.
+Bienvenue dans BLACKOUT PROTOCOL ! Retrouvez les autres joueurs dans le classement et ajoutez-les en ami. ⇒ Welcome to BLACKOUT PROTOCOL! Find the other players in the leaderboard and add them as friends.
 Connectez-vous pour voir vos notifications. ⇒ Sign in to see your notifications.
 Voir le profil ⇒ View profile
 Effacer les notifications lues ⇒ Clear read notifications
@@ -1300,7 +1300,7 @@ Réglés par l'hôte ⇒ Set by the host
 Écrire un message ⇒ Write a message
 
 # Tenues (src/06ga-tenues.js, écran Tenues et pause : src/09u-tenues.js, shell.html)
-Ligne de front, polyvalent ⇒ Frontline, flexible
+Ligne de front, polyvalent ⇒ Front line, flexible
 Commando ⇒ =
 Courte portée, agressif ⇒ Close range, aggressive
 Ghillie ⇒ =
@@ -1380,7 +1380,7 @@ Nom d'utilisateur : {0} ⇒ Username: {0}
 Code de secours : {0} ⇒ Recovery code: {0}
 Donné le {0} ⇒ Issued on {0}
 Il sert à choisir un nouveau mot de passe si vous oubliez le vôtre (Connexion, "Mot de passe oublié ?"). Il ne sert qu'une fois. Un nouveau code vous est alors donné. ⇒ It lets you choose a new password if you forget yours (Sign in, "Forgot your password?"). It works only once. You are then given a new code.
-riposte-frontline-code-de-secours.txt ⇒ riposte-frontline-recovery-code.txt
+blackout-protocol-code-de-secours.txt ⇒ blackout-protocol-recovery-code.txt
 Créer mon code de secours ⇒ Create my recovery code
 Mot de passe et code de secours ⇒ Password and recovery code
 Ajouter un mot de passe ⇒ Add a password
@@ -1448,7 +1448,7 @@ Copiez-le à la main ⇒ Copy it by hand
 Copier le lien ⇒ Copy the link
 Rejoignez mon salon {0} ⇒ Join my lobby {0}
 Bot ⇒ Bot
-Installer Riposte ⇒ Install Riposte
+Installer BLACKOUT PROTOCOL ⇒ Install BLACKOUT PROTOCOL
 Ouvrez le fichier téléchargé dans le dossier Téléchargements et confirmez. L'installation se termine seule et revient au mode Jeu. ⇒ Open the downloaded file in the Downloads folder and confirm. The installation finishes on its own and returns to Gaming Mode.
 Installez le jeu dans Steam pour y jouer depuis le mode Jeu. ⇒ Install the game in Steam to play it from Gaming Mode.
 Télécharger de nouveau ⇒ Download again

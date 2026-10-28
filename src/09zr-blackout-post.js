@@ -14,7 +14,7 @@
     cga: ['#000000', '#55ffff', '#ff55ff', '#ffffff'],
   };
   const PRESETS = { // built-in looks (the editor adds the user's own)
-    'Clean (Riposte)': {},
+    'Clean (no filter)': {},
     'BLACKOUT palette': { palette: 'blackout', dither: true, ditherPat: 'bayer4', ditherStr: 0.55, pixel: 2, contrast: 1.15, vignette: 0.35, outline: true, outlineW: 1, outlineStr: 0.6 },
     'Retro dither': { dither: true, ditherPat: 'bayer8', ditherStr: 0.8, levels: 4, pixel: 3, contrast: 1.1, scan: 0.25, scanSize: 3 },
     'Night vision': { palette: 'nightvision', dither: true, ditherPat: 'noise', ditherStr: 0.35, brightness: 1.6, grain: 0.12, vignette: 0.9, scan: 0.2 },

@@ -8,26 +8,16 @@
 
   function rebrand() {
     try {
-      document.title = 'BLACKOUT';
+      document.title = 'BLACKOUT PROTOCOL';
       const metas = ['application-name', 'apple-mobile-web-app-title'];
       for (const n of metas) {
         const el = document.querySelector(`meta[name="${n}"]`);
-        if (el) el.setAttribute('content', 'BLACKOUT');
+        if (el) el.setAttribute('content', 'BLACKOUT PROTOCOL');
       }
+      // pass 18: the wordmark itself (BLACKOUT / PROTOCOL) is static HTML and CSS in shell.html, so it shows from the very first paint
       document.querySelectorAll('.logo').forEach((el) => {
-        el.setAttribute('aria-label', 'BLACKOUT');
-        el.style.backgroundImage = 'none';
-        el.style.background = 'transparent';
-        el.textContent = 'BLACKOUT';
-        el.style.fontFamily = 'system-ui, sans-serif';
-        el.style.fontWeight = '800';
-        el.style.fontSize = 'clamp(28px, 5vw, 54px)';
-        el.style.letterSpacing = '0.18em';
-        el.style.color = '#c8d0d8';
-        el.style.display = 'flex';
-        el.style.alignItems = 'center';
-        el.style.justifyContent = 'center';
-        el.style.filter = 'none';
+        el.setAttribute('aria-label', 'BLACKOUT PROTOCOL');
+        if (!el.querySelector('.wm-a')) el.innerHTML = '<span class="wm-a">BLACKOUT</span><span class="wm-b">PROTOCOL</span>';
       });
       // Hide credit / riposte links if present
       document.querySelectorAll('.credit, a[href*="riposte"], a[href*="playriposte"]').forEach((el) => {

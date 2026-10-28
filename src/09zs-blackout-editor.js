@@ -214,7 +214,7 @@
       A.custom[id] = o; BOCFG.applySection('atts'); BOCFG.save(); aSel = id; render(); toast('Created ' + n);
     };
     return [sec('Attachment'), el('div', { class: 'row w2' }, el('label', null, 'Attachment'), s), note('Slot: ' + a.slot + (custom ? ' (custom)' : '') + '. Multipliers: 1 = no change.'), ...rows,
-      sec('Fits these guns'), note('None ticked = Riposte family rules. Ticked = only these guns.'), box,
+      sec('Fits these guns'), note('None ticked = default family rules. Ticked = only these guns.'), box,
       el('div', { class: 'btns' }, btn(custom ? 'Delete custom attachment' : 'Reset this attachment', () => { if (custom) { delete A.custom[aSel]; aSel = null; } else delete A.edits[aSel]; BOCFG.applySection('atts'); BOCFG.save(); render(); toast('Done'); }, 'dng')),
       sec('New attachment'), el('div', { class: 'row w2' }, el('label', null, 'Name'), nn), el('div', { class: 'row w2' }, el('label', null, 'Slot'), slot), el('div', { class: 'row w2' }, el('label', null, '3D model'), model),
       el('div', { class: 'btns' }, btn('Create', () => create(false), 'pri'), btn('Clone selected', () => create(true))),

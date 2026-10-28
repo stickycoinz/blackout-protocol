@@ -6,7 +6,7 @@
 # Libellé interne du journal de démarrage (BOT_T)
 09-game.js: début
 # Rapport de connexion et journal réseau : destinés au développeur, ils restent en français (README, « Langues »)
-09c-net.js: Rapport de connexion, Riposte: Frontline
+09c-net.js: Rapport de connexion, BLACKOUT PROTOCOL
 09c-net.js: Rôle :
 09c-net.js: Chemins trouvés
 09c-net.js: Relais de secours :

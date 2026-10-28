@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /api/
 
-Sitemap: https://www.playriposte.com/sitemap.xml
+Sitemap: https://stickycoinz.github.io/blackout-protocol/sitemap.xml
