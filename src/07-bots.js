@@ -15,6 +15,11 @@ const DIFF = [
   { name: _t('Recrue'), react: [0.45, 0.8], err: 0.11, settle: 1.7, head: 0.03, turn: 3.2, dmg: 0.7, nade: 0.3, see: 0.6, lag: 0.34, flinch: 1.3, tokens: 1, mem: 2.5, flair: 0.3, chase: 8, spin: 3.4, startle: [0.45, 0.7] },
   { name: _t('Régulier'), react: [0.28, 0.5], err: 0.08, settle: 1.1, head: 0.07, turn: 4.8, dmg: 0.88, nade: 0.6, see: 0.85, lag: 0.2, flinch: 1.0, tokens: 2, mem: 4, flair: 0.7, chase: 13, spin: 4.6, startle: [0.32, 0.5] },
   { name: _t('Vétéran'), react: [0.16, 0.3], err: 0.055, settle: 0.7, head: 0.14, turn: 7, dmg: 1.0, nade: 1.0, see: 1.1, lag: 0.11, flinch: 0.7, tokens: 3, mem: 6, flair: 1.0, chase: 18, spin: 5.8, startle: [0.22, 0.36] },
+  // BLACKOUT pass 17: three harder levels and a Custom one (its values come from the editor sliders, 09zzd-blackout-ai.js). hear: hearing range (x)
+  { name: 'Hard', react: [0.12, 0.22], err: 0.042, settle: 0.5, head: 0.2, turn: 8.5, dmg: 1.1, nade: 1.2, see: 1.3, lag: 0.08, flinch: 0.55, tokens: 3, mem: 8, flair: 1.1, chase: 22, spin: 6.6, startle: [0.16, 0.26], hear: 1.25 },
+  { name: 'Elite', react: [0.08, 0.15], err: 0.03, settle: 0.35, head: 0.3, turn: 10.5, dmg: 1.2, nade: 1.4, see: 1.6, lag: 0.05, flinch: 0.4, tokens: 4, mem: 11, flair: 1.2, chase: 28, spin: 7.5, startle: [0.1, 0.18], hear: 1.5 },
+  { name: 'Nightmare', react: [0.04, 0.09], err: 0.018, settle: 0.2, head: 0.45, turn: 14, dmg: 1.35, nade: 1.7, see: 2.1, lag: 0.025, flinch: 0.25, tokens: 6, mem: 15, flair: 1.3, chase: 40, spin: 9, startle: [0.05, 0.1], hear: 2 },
+  { name: 'Custom', react: [0.16, 0.3], err: 0.055, settle: 0.7, head: 0.14, turn: 7, dmg: 1.0, nade: 1.0, see: 1.1, lag: 0.11, flinch: 0.7, tokens: 3, mem: 6, flair: 1.0, chase: 18, spin: 5.8, startle: [0.22, 0.36], hear: 1, custom: true },
 ];
 const BOT_NAMES = [
   ['Dubois', 'Keller', 'Marchetti', 'Okafor', 'Novak'],
@@ -151,7 +156,7 @@ function pickGoal(b, now) {
     if (foes.length) { const q = pick(foes); return botGuess(b.pos, _gpick.set(q.x, b.pos.y, q.z), 3, 0.03); }
   }
   const D = CURMAP.def, laneOf = D.lane;
-  const recent = soundEvents.filter((s) => now - s.t < 6 && !s.quiet && soundFoe(s, b) && (laneOf(s.pos.x) === b.lane || s.pos.distanceTo(b.pos) < 22));
+  const recent = soundEvents.filter((s) => now - s.t < 6 && !s.quiet && soundFoe(s, b) && (laneOf(s.pos.x) === b.lane || s.pos.distanceTo(b.pos) < 22 * (botDiff().hear || 1)));
   if (recent.length && Math.random() < (ffa ? 0.4 : 0.3)) { const s = pick(recent); return botGuess(b.pos, s.pos, 3, 0.12); }
   // comme un joueur, chaque bot a sa route de prédilection et monte vers les positions à tenir
   const own = b.team === 0 ? 1 : -1, side = ffa ? 0 : -own; // chacun pour soi : pas de moitié de carte à privilégier
@@ -252,7 +257,7 @@ function botSense(b, now) {
       for (let i = soundEvents.length - 1; i >= 0; i--) {
         const s = soundEvents[i]; if (now - s.t > 0.6 || s.t <= b.heardT) break;
         const ds = s.pos.distanceTo(b.pos);
-        if (soundFoe(s, b) && ds < (s.quiet ? 9 : s.loud ? 60 : 34)) {
+        if (soundFoe(s, b) && ds < (s.quiet ? 9 : s.loud ? 60 : 34) * (D.hear || 1)) {
           b.heardT = s.t; b.lastKnown.copy(botGuess(b.pos, s.pos, 2.5, 0.14)); b.lastSeenT = now - 2.5; b.target = null; botLookAt(b, b.lastKnown, now, 1.1); break;
         }
       }

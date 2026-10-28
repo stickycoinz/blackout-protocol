@@ -114,7 +114,7 @@ function srvMsg(m) {
     if (SRV.id === 'nouveau' && /^[A-Z0-9]{5}$/.test(m.i)) SRV.id = m.i; // salon créé : son code, pour revenir après une coupure
     const c = m.cfg && typeof m.cfg === 'object' ? m.cfg : {};
     SRV.st = { o: MODES[m.o] ? m.o : 'tdm', k: clamp(m.k | 0, 0, 99), ph: m.ph, i: SRV.id, ps: !!m.ps, own: String(m.own || ''),
-      cfg: { bots: c.b ? 1 : 0, diff: clamp(c.df | 0, 0, 2), limit: clamp(c.lim | 0, 1, 999), time: clamp(c.min | 0, 1, 99), pub: c.pub ? 1 : 0 }, m: mapById(m.m).id, c: Array.isArray(m.c) ? m.c.slice(0, 2).map((c) => mapById(c).id) : [], vt: Array.isArray(m.vt) ? [m.vt[0] | 0, m.vt[1] | 0] : [0, 0],
+      cfg: { bots: c.b ? 1 : 0, diff: clamp(c.df | 0, 0, DIFF.length - 1), limit: clamp(c.lim | 0, 1, 999), time: clamp(c.min | 0, 1, 99), pub: c.pub ? 1 : 0 }, m: mapById(m.m).id, c: Array.isArray(m.c) ? m.c.slice(0, 2).map((c) => mapById(c).id) : [], vt: Array.isArray(m.vt) ? [m.vt[0] | 0, m.vt[1] | 0] : [0, 0],
       mv: m.mv === 0 || m.mv === 1 ? m.mv : -1, vo: !!m.vo, r: clamp(+m.r || 0, 0, 600000), s: clamp(m.s | 0, 1, 99), x: clamp(m.x | 0, 1, 99), me: String(m.me || ''),
       code: /^[A-Z0-9]{5}$/.test(m.code) ? m.code : '', hote: String(m.hote || ''),
       j: m.j.filter((p) => Array.isArray(p) && typeof p[0] === 'string').slice(0, 99).map((p) => ({ id: p[0], n: netClean(p[1]), lv: clamp(p[2] | 0, 0, 999), t: p[3] === 1 ? 1 : 0 })) };

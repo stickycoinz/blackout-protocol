@@ -39,6 +39,7 @@ const CLOTH_H = 1 / 60;
 const CLOTH_MAX = COARSE || ULTRA ? 3 : 8;
 /* Brise de chaque carte pour les tissus : direction (x, z) et vitesse moyenne (m/s) ; sinon CLOTH_BREEZE_DEF */
 const CLOTH_BREEZE = { sable: [0.8, 0.5, 2.6], givre: [-0.6, 0.8, 3.0], embruns: [1, 0.2, 3.4], floreal: [0.6, 0.6, 1.4], meltem: [0.3, -1, 3.8], tephra: [0.55, -0.85, 3.0], stratus: [1, 0.35, 4.6], simoun: [0.9, 0.3, 3.4], lotissement: [0.7, 0.7, 2.2] };
+for (const m of MAPS) if (m.boBase && CLOTH_BREEZE[m.boBase] && !CLOTH_BREEZE[m.id]) CLOTH_BREEZE[m.id] = CLOTH_BREEZE[m.boBase]; // BLACKOUT night maps (02zb)
 const CLOTH_BREEZE_DEF = [0.8, 0.4, 2.2];
 const CLOTH = { t: 0, wind: new V3(), gust: 1, damp: 0.978 }; // damp : vitesse gardée à chaque pas (0,992 avant : les capes, enfin visibles dans l'aperçu des tenues, battaient encore une seconde après un demi-tour)
 

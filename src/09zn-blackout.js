@@ -4,7 +4,7 @@
   // query flags (?bo=1, ?carte=blackout, ?role=) are dropped by static servers that redirect *.html to clean URLs (serve, some Node
   // setups): #bo / #blackout in the hash survives those redirects. Without any flag, BLACKOUT is simply the map picked in the menu.
   const BO_MODE = qs().get('bo') === '1' || qs().get('carte') === 'blackout' || qs().get('role') || /^#(bo|blackout)\b/.test(location.hash);
-  try { if (typeof MAP_ART !== 'undefined' && !MAP_ART.blackout && MAP_ART.sable) MAP_ART.blackout = MAP_ART.sable; } catch (e) {}
+  try { if (typeof MAP_ART !== 'undefined') { if (!MAP_ART.blackout && MAP_ART.sable) MAP_ART.blackout = MAP_ART.sable; for (const m of MAPS) if (m.boBase && !MAP_ART[m.id] && MAP_ART[m.boBase]) MAP_ART[m.id] = MAP_ART[m.boBase]; } } catch (e) {}
 
   function rebrand() {
     try {
@@ -96,7 +96,7 @@
     BO.refreshRoleUI();
     document.body.appendChild(box);
     // only for BLACKOUT: in the menu with BLACKOUT picked, or in a BLACKOUT match
-    const vis = () => { try { const on = (typeof boIsBlackout === 'function' && boIsBlackout()) || (MATCH.state === 'menu' && Settings.map === 'blackout');
+    const vis = () => { try { const on = (typeof boIsBlackout === 'function' && boIsBlackout()) || (MATCH.state === 'menu' && boMapOn(Settings.map));
       box.style.display = on ? 'flex' : 'none'; } catch (e) {} };
     vis(); setInterval(vis, 500);
   }
@@ -127,8 +127,8 @@
     try {
       if (!BO_MODE) return;
       if (MATCH && MATCH.state === 'playing') return;
-      Settings.map = 'blackout';
-      if (typeof mapEnsure === 'function') await mapEnsure('blackout');
+      if (!boMapOn(Settings.map)) Settings.map = 'blackout';
+      if (typeof mapEnsure === 'function') await mapEnsure(Settings.map);
       try { uiHide(); } catch (e) {}
       if (typeof startMatch === 'function') startMatch();
     } catch (e) { console.warn('boForceStart', e); }

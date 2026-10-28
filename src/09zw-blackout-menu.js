@@ -156,8 +156,8 @@ body.bo-ui .bo-ctl+.keys-h,body.bo-ui .bo-ctl~.keys-h{display:none}
   playPick = function (k) {
     try { sfxUi('click'); } catch (e) {}
     if (k === 'merc' || k === 'spy') return;
-    Settings.map = 'blackout';
-    if (k === 'solo') { menuLaunch({ online: false, map: 'blackout', deploy: () => startMatch() }); return; }
+    if (!boMapOn(Settings.map)) Settings.map = 'blackout';
+    if (k === 'solo') { menuLaunch({ online: false, map: Settings.map, deploy: () => startMatch() }); return; }
     if (typeof netInLobby === 'function' && netInLobby()) { uiGo('multi'); UI.lobbyBack = true; return; }
     if (k === 'host') { uiGo('multi'); UI.lobbyBack = true; netHost({}); return; }
     if (k === 'join') { uiGo('multi'); UI.lobbyBack = true; try { lmPush(LM.scr.multi, 'join'); } catch (e) {} setTimeout(() => { const c = $$('netCodeIn'); if (c) c.focus(); }, 60); return; }

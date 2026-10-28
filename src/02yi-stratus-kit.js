@@ -58,7 +58,7 @@ function stCrystalTexLoad() {
   CRX.U.tCrx.value = CRX.none;
   fetchTexPack('fx_cristal').then((d) => d && new THREE.TextureLoader().load(d.map, (t) => {
     t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4;
-    if (CURMAP.id === 'stratus' && !CRX.tex) { CRX.tex = t; CRX.U.tCrx.value = t; } else t.dispose();
+    if ((CURMAP.id === 'stratus' || CURMAP.id === 'bo_stratus') && !CRX.tex) { CRX.tex = t; CRX.U.tCrx.value = t; } else t.dispose();
   }));
 }
 function stCrystalTexFree() { if (CRX.tex) { CRX.tex.dispose(); CRX.tex = null; } if (CRX.none) CRX.U.tCrx.value = CRX.none; }

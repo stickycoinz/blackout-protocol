@@ -787,7 +787,7 @@ function netCfg(c) {
   const map = mapById(c.map).id, mode = MODE_IDS.includes(c.mode) && (c.mode !== 'dom' || MAP_DEFS[map].dom) ? c.mode : 'tdm'; // la domination demande une carte à points
   const L = MODES[mode].limits, limit = L.includes(+c.limit) ? +c.limit : L[1];
   const time = [5, 10, 15].includes(+c.time) ? +c.time : 10;
-  const diff = [0, 1, 2].includes(+c.diff) ? +c.diff : 2;
+  const diff = Number.isInteger(+c.diff) && +c.diff >= 0 && +c.diff < DIFF.length ? +c.diff : 2; // BLACKOUT pass 17: Hard, Elite, Nightmare, Custom
   return { bots: +c.bots ? 1 : 0, diff, limit, time, map, mode, pub: +c.pub ? 1 : 0 };
 }
 

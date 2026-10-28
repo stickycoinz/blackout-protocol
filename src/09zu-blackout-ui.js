@@ -333,7 +333,7 @@ body.bo-load #lockPrompt,body.bo-load #boHud,body.bo-load #cd{display:none!impor
   if (typeof requestLock === 'function') { const _rl = requestLock; requestLock = function () { if (isOpen() && bo()) return; return _rl.apply(this, arguments); }; }
   document.addEventListener('pointerlockchange', () => { if (document.pointerLockElement && isOpen() && bo()) freeMouse(); });
   /* BLACKOUT skips Riposte's class (preset) page: straight into the match, where the BLACKOUT loadout screen opens */
-  const boFlow = (F) => !!F && ((F.map || (typeof Settings !== 'undefined' && Settings.map)) === 'blackout');
+  const boFlow = (F) => !!F && boMapOn(F.map || (typeof Settings !== 'undefined' && Settings.map));
   if (typeof uiGo === 'function') {
     const _uiGo = uiGo;
     uiGo = function (name) {
