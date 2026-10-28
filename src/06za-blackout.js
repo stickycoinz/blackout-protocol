@@ -897,12 +897,12 @@ if (typeof knifePick === 'function') {
   };
 }
 
-/* F/L: merc flashlight. R: spy roll. */
+/* F/L: merc flashlight. Left Alt: spy roll. */
 addEventListener('keydown', (e) => {
   if (e.code === (window.BOKEYS ? BOKEYS.code('flash') : 'KeyL') && !e.repeat && boIsBlackout() && MATCH.state === 'playing' && !(typeof CHAT !== 'undefined' && CHAT.open) && !(window.BOLOADOUT && BOLOADOUT.isOpen())) {
     if (!boIsSpy()) BO.flashOn = !BO.flashOn;
   }
-  // spy roll (R) is handled by the BLACKOUT rules (09zo), from the game's own key state
+  // spy roll (left Alt) is handled by the BLACKOUT rules (09zo), from the game's own key state
 });
 
 /* Prefetch assets once GPU boots */

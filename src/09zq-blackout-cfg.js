@@ -26,6 +26,8 @@
       exposure: num(1.22, 0.2, 4, 0.01, 'Exposure'), ambient: num(0.42, 0, 3, 0.01, 'Ambient (sky fill)'), moon: num(0.3, 0, 4, 0.01, 'Moonlight'),
       fogD: num(0.012, 0, 0.08, 0.001, 'Fog density'), fogColor: col('#080913', 'Fog colour'),
       lamps: num(2.6, 0, 10, 0.1, 'Street lamp intensity'), termGlow: num(1, 0, 4, 0.05, 'Terminal screen glow'),
+      muzzleK: num(1, 0, 5, 0.05, 'Muzzle light intensity'), muzzleRange: num(1, 0.2, 4, 0.05, 'Muzzle light range'),
+      suppFlash: num(0.35, 0, 1, 0.05, 'Suppressed flash x'),
     },
     look: {
       pixel: num(1, 1, 16, 1, 'Pixel size (1 = off)'), renderScale: num(1, 0.25, 1, 0.05, 'Render scale'),

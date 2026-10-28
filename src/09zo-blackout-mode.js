@@ -295,12 +295,13 @@
   }
 
   /* ---------- player spy input ---------- */
-  const SPY_KEYS = new Set(['KeyE', 'KeyF', 'KeyR', 'KeyG', 'KeyQ', 'Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'KeyX', 'KeyV', 'KeyB']);
+  const SPY_KEYS = new Set(['KeyE', 'KeyF', 'KeyR', 'AltLeft', 'KeyG', 'KeyQ', 'Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'KeyX', 'KeyV', 'KeyB']);
   const _onKey = onKey;
   onKey = function (e, down) {
     if (boOn() && spyRole() && MATCH.state === 'playing' && PL.ent && PL.ent.alive && !(typeof CHAT !== 'undefined' && CHAT.open)) {
       const c = keyCanon(e.code);
-      if (c && SPY_KEYS.has(c) && !(c === 'Digit1' || c === 'Digit2') || (c && (c === 'Digit1' || c === 'Digit2') && !(window.BOCFG && BOCFG.spyArmed && BOCFG.spyArmed()))) {
+      const armedKey = c === 'Digit1' || c === 'Digit2' || c === 'KeyR'; // weapon keys and reload reach Riposte when the spy carries the M9
+      if (c && SPY_KEYS.has(c) && (!armedKey || !(window.BOCFG && BOCFG.spyArmed && BOCFG.spyArmed()))) {
         if (pointerActive()) KEYS[c] = down;
         if (e.preventDefault) e.preventDefault();
         return;
@@ -320,8 +321,8 @@
     const holdE = !!(KEYS.KeyE || (typeof TOUCH !== 'undefined' && TOUCH.use));
     const clicked = R.clickT && performance.now() - R.clickT < 250 && !(window.BOCFG && BOCFG.spyArmed && BOCFG.spyArmed());
     let prompt = '', prog = -1;
-    // R: roll
-    if (pressed('KeyR')) {
+    // left Alt (rebindable): roll
+    if (pressed('AltLeft')) {
       const fw = (KEYS.KeyW ? 1 : 0) - (KEYS.KeyS ? 1 : 0), st = (KEYS.KeyD ? 1 : 0) - (KEYS.KeyA ? 1 : 0);
       const fx = -Math.sin(PL.yaw), fz = -Math.cos(PL.yaw), rx = Math.cos(PL.yaw), rz = -Math.sin(PL.yaw);
       startRoll(e, fx * fw + rx * st, fz * fw + rz * st);
@@ -433,7 +434,11 @@
       S.shotT = (S.shotT || 0) - dt;
       if (S.fightT > 0.35 && S.shotT <= 0 && Math.abs(angDiff(b.yaw, S.fYaw)) < 0.12) { I.firePressed = true; I.fire = true; S.shotT = rand(0.32, 0.6); }
       if (b.arms) { const w = b.arms.slots[b.arms.cur]; if (w && w.mag <= 0 && !b.arms.reload) I.reload = true; }
-    } else S.fightT = 0;
+    } else {
+      S.fightT = 0;
+      // out of a fight, an armed spy bot tops up a half-empty M9
+      if (armed && b.arms) { const w = b.arms.slots[b.arms.cur]; if (w && w.def && w.mag < w.def.mag * 0.5 && w.reserve > 0 && !b.arms.reload) I.reload = true; }
+    }
     if (S.mode === 'stalk' && S.tgt && S.tgt.alive) {
       const m = S.tgt, d = hyp2(m.pos.x, m.pos.z, b.pos.x, b.pos.z);
       if (d <= g.takedownRange && takedownTarget(b) === m) { doTakedown(b, m); S.mode = 'hack'; S.tgt = null; S.decideT = 0.5; }

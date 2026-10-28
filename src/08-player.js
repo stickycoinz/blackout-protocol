@@ -288,7 +288,7 @@ function playerShotFx(d, ads, f, muzzle, kv, kh, hitAny) {
   padRumble(0.18 + d.recoil.kick * 40, 0.5, 45);
   if (!d.bolt && !d.pump) vmShell(d);
   sfxGun(d.sound, null);
-  if (!d.silent) flashLight(muzzle, 3, 8, 0.05);
+  muzzleLight(muzzle, d.silent, 3, 8, 0.05, PL.ent);
 }
 
 /* ---------- Mise à jour ---------- */

@@ -260,7 +260,7 @@ body.bo-load #lockPrompt,body.bo-load #boHud,body.bo-load #cd{display:none!impor
       left.append(ref.locked ? slotBtn('sidearm', 'SIDEARM · ISSUED', 'm9', ['sil']) : slotBtn('sidearm', 'SIDEARM', l.spy.secondary, l.spy.secondaryAtt));
       const G = l.spy.gadgets, S = SP();
       left.append(el('div', { class: 'slot' }, el('small', null, 'GADGETS'), GADS.filter((g) => G[g[0]]).map((g) => g[1] + ' x' + S[g[3]]).join(' · ') || 'none'));
-      left.append(el('div', { class: 'note' }, 'Roll ' + KK('roll', 'R') + ' (i-frames), climb ' + KK('jump', 'SPACE') + ' at a ledge, crouch in the dark to cloak, shoot lamps out.'));
+      left.append(el('div', { class: 'note' }, 'Roll ' + KK('roll', 'ALT') + ' (i-frames), climb ' + KK('jump', 'SPACE') + ' at a ledge, crouch in the dark to cloak, shoot lamps out.'));
     } else {
       left.append(slotBtn('primary', 'PRIMARY', l.merc.primary, l.merc.primaryAtt), slotBtn('secondary', 'SECONDARY', l.merc.secondary, l.merc.secondaryAtt));
       left.append(el('div', { class: 'note' }, 'Flashlight ' + KK('flash', 'L') + '. Spies cloak in the dark: light them up, and keep the lamps alive.'));

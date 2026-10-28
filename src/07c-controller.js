@@ -268,6 +268,6 @@ function ctlShoot(ent, now) {
   ent.lastShotT = now;
   kcEvent('shot', { m: muzzle.clone(), d: f.clone(), kind: d.sound, sid: ent.kcI });
   if (ent.isPlayer) playerShotFx(d, ads, f, muzzle, kv, kh, hitAny);
-  else { muzzleWorldFx(muzzle, f, d.silent, d.feel ? d.feel.flash : 1); if (!d.silent) flashLight(muzzle, 2.5, 7, 0.05); sfxGun(d.sound, muzzle, ent); ent.recoil = 0.05; }
+  else { muzzleWorldFx(muzzle, f, d.silent, d.feel ? d.feel.flash : 1); muzzleLight(muzzle, d.silent, 2.5, 7, 0.05, ent); sfxGun(d.sound, muzzle, ent); ent.recoil = 0.05; }
   return { hitAny };
 }

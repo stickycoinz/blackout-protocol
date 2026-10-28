@@ -296,7 +296,10 @@ function bloodFx(p, dir, head) {
 /* mute : arme silencieuse, ni flash ni étincelles, un simple filet de fumée ; f : force du flash de l'arme (FEEL.flash, 1 par défaut).
    Une rosace face à la caméra, puis trois lueurs de plus en plus petites le long du tir : vue de côté, une langue de flamme. */
 function muzzleWorldFx(p, dir, mute, f = 1) {
-  if (mute) { FX.smoke.spawn(p.x, p.y, p.z, dir.x * 0.6 + rand(-0.15, 0.15), 0.3, dir.z * 0.6 + rand(-0.15, 0.15), 0.5, 0.07, 0.4, 0.62, 0.6, 0.58, 0.07, 0, 0, 1.2); return; }
+  if (mute) {
+    const q = MUZ.suppFx; // a suppressed shot still blinks (a mode sets the size; 0 in Riposte)
+    if (q > 0.01) { const k = clamp(0.65 + 0.35 * f, 0.8, 1.6) * (0.35 + 0.65 * q); FX.muzzle.spawn(p.x, p.y, p.z, 0, 0, 0, 0.04, 0.5 * k, 0.6 * k, 3.4 * q, 2.8 * q, 2.2 * q, 1, 0.1); FX.add.spawn(p.x + dir.x * 0.1, p.y + dir.y * 0.1, p.z + dir.z * 0.1, dir.x * 2, dir.y * 2, dir.z * 2, 0.04, 0.16 * k, 0.12 * k, 4 * q, 2.4 * q, 0.8 * q, 0.9, 0); }
+    FX.smoke.spawn(p.x, p.y, p.z, dir.x * 0.6 + rand(-0.15, 0.15), 0.3, dir.z * 0.6 + rand(-0.15, 0.15), 0.5, 0.07, 0.4, 0.62, 0.6, 0.58, 0.07, 0, 0, 1.2); return; }
   const k = clamp(0.65 + 0.35 * f, 0.8, 1.6);
   FX.muzzle.spawn(p.x, p.y, p.z, 0, 0, 0, 0.05, 0.62 * k, 0.85 * k, 3.4, 2.8, 2.2, 1, 0.1);
   for (let i = 1; i <= 3; i++) { const d = 0.12 * i * k; FX.add.spawn(p.x + dir.x * d, p.y + dir.y * d, p.z + dir.z * d, dir.x * 2.5, dir.y * 2.5, dir.z * 2.5, 0.05, (0.34 - 0.07 * i) * k, (0.26 - 0.06 * i) * k, 4, 2.6 - 0.35 * i, 1 - 0.25 * i, 0.9, 0); }

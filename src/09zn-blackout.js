@@ -142,7 +142,7 @@
 (function(){
   const style = document.createElement('style');
   style.id = 'bo-spy-hud';
-  style.textContent = `body.bo-spy .ammo, body.bo-spy #wname, body.bo-spy #mag, body.bo-spy #reserve, body.bo-spy #pips, body.bo-spy #nades, body.bo-spy #xhair { opacity: 0 !important; visibility: hidden !important; }`;
+  style.textContent = `body.bo-spy:not(.bo-armed) .ammo, body.bo-spy:not(.bo-armed) #wname, body.bo-spy:not(.bo-armed) #mag, body.bo-spy:not(.bo-armed) #reserve, body.bo-spy:not(.bo-armed) #pips, body.bo-spy #nades, body.bo-spy #xhair { opacity: 0 !important; visibility: hidden !important; }`;
   document.documentElement.appendChild(style);
   setInterval(() => {
     try {

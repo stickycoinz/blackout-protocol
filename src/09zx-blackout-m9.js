@@ -62,7 +62,8 @@
       const cl = new THREE.AnimationClip('bo_' + n, c.duration, c.tracks.filter((t) => t.name.endsWith('.quaternion') && UPPER.test(t.name.split('.')[0])));
       const a = K.mixer.clipAction(cl); a.enabled = true; a.setEffectiveWeight(0); a.play(); return a;
     };
-    const p = { idle: mk('Pistol_Idle_Loop'), up: mk('Pistol_Aim_Up'), neu: mk('Pistol_Aim_Neutral'), down: mk('Pistol_Aim_Down'), w: 0 };
+    const p = { idle: mk('Pistol_Idle_Loop'), up: mk('Pistol_Aim_Up'), neu: mk('Pistol_Aim_Neutral'), down: mk('Pistol_Aim_Down'), rel: mk('Pistol_Reload'), w: 0, rw: 0 };
+    if (p.rel) p.rel.timeScale = 0; // scrubbed by the reload progress (any reload time from the weapon stats)
     if (p.neu) K.pist = p;
     return K.pist;
   }
@@ -98,7 +99,14 @@
       const up = Math.max(0, Math.min(1, pitch / 0.9)), dn = Math.max(0, Math.min(1, -pitch / 0.9));
       const W = p.w * 4; // over the locomotion (weight 1): the arms and chest follow the pistol pose
       if (p.up) p.up.setEffectiveWeight(W * up); if (p.down) p.down.setEffectiveWeight(W * dn);
-      p.neu.setEffectiveWeight(W * (1 - up - dn));
+      // reload: the UAL Pistol_Reload clip, scrubbed along Riposte's reload timer (player and bots)
+      const RL = e.arms && e.arms.reload, rr = RL && !RL.tube && RL.dur > 0 ? Math.min(1, RL.t / RL.dur) : -1;
+      const rwT = rr >= 0 && out ? Math.min(1, rr / 0.08, (1 - rr) / 0.1) : 0;
+      p.rw += (rwT - p.rw) * Math.min(1, k * 1.6);
+      if (p.rel) { if (rr >= 0) p.rel.time = rr * p.rel.getClip().duration * 0.98; p.rel.setEffectiveWeight(W * p.rw); }
+      const aw = p.rel ? 1 - p.rw : 1;
+      if (p.up) p.up.setEffectiveWeight(W * up * aw); if (p.down) p.down.setEffectiveWeight(W * dn * aw);
+      p.neu.setEffectiveWeight(W * (1 - up - dn) * aw);
       if (p.idle) p.idle.setEffectiveWeight(0);
     }
     const r = _ku.apply(this, arguments);
@@ -113,7 +121,8 @@
         if (G.shots >= 0 && sh !== G.shots) G.kick = 1;
         G.shots = sh; G.kick = Math.max(0, G.kick - (dt || 0.016) * 9);
         K.bones.hand_r.getWorldPosition(_v);
-        _e.set(pitch + G.kick * 0.22, yaw, 0); _q.setFromEuler(_e);
+        const rl = (p && p.rw) || 0; // reloading: the muzzle tips up and the gun rolls in toward the off hand
+        _e.set(pitch * (1 - rl) + G.kick * 0.22 + rl * 0.95, yaw + rl * 0.45, rl * 0.6); _q.setFromEuler(_e);
         _f.set(0, 0, -1).applyQuaternion(_q);
         G.g.position.copy(_v).addScaledVector(_f, 0.04 - G.kick * 0.03);
         G.g.position.y += 0.03;
@@ -132,5 +141,13 @@
     return r;
   };
   // the player's own spy body is drawn through the OTS camera: same path. Remove the hand-held gun with the body.
-  window.BOM9 = { A, armed, botDef };
+  // world muzzle of a spy's hand-held gun (shot light and flash of the player's own spy, whose first-person gun is hidden)
+  const _mz = new THREE.Vector3();
+  function muzzleOf(e) {
+    const K = e && e.model && e.model._boKay, G = K && K.m9;
+    if (!G || !G.g.visible) return null;
+    G.g.updateMatrixWorld(true);
+    return G.muzzle && G.muzzle.isVector3 ? _mz.copy(G.muzzle).applyMatrix4(G.g.matrixWorld) : _mz.copy(G.g.position); // muzzle: local point of the gun group
+  }
+  window.BOM9 = { A, armed, botDef, muzzleOf };
 })();

@@ -931,7 +931,7 @@ function netApply(id, P) {
     e.net.shots = f; e.lastShotT = MATCH.time;
     const muzzle = e.model.gun.localToWorld(e.model.muzzleLocal.clone());
     const cp = Math.cos(e.net.pitch), dir = new V3(-Math.sin(e.net.yaw) * cp, Math.sin(e.net.pitch), -Math.cos(e.net.yaw) * cp);
-    muzzleWorldFx(muzzle, dir, e.weapon.silent, e.weapon.feel ? e.weapon.feel.flash : 1); if (!e.weapon.silent) flashLight(muzzle, 2.5, 7, 0.05); sfxGun(e.weapon.sound, muzzle, e);
+    muzzleWorldFx(muzzle, dir, e.weapon.silent, e.weapon.feel ? e.weapon.feel.flash : 1); muzzleLight(muzzle, e.weapon.silent, 2.5, 7, 0.05, e); sfxGun(e.weapon.sound, muzzle, e);
     kcEvent('shot', { m: muzzle.clone(), d: dir.clone(), kind: e.weapon.sound, sid: e.kcI }); // pour la relecture des killcams
     if (!e.weapon.silent) {
       const hit = rayWorld(muzzle.x, muzzle.y, muzzle.z, dir.x, dir.y, dir.z, 120), end = muzzle.clone().addScaledVector(dir, hit ? hit.t : 80);

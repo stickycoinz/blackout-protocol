@@ -80,6 +80,8 @@
       note('Hotspot = the bright centre beam; spill = the wide soft halo around it. Decay 2 fades smoothly to the throw distance. Bot / peer torch lights: how many nearby mercs cast real light (0 to 3, applies at the next map load); every merc also shows a faint visible beam. L or Shift+F toggles the flashlight. With drain above 0 the battery empties while it is on and the light shuts off at 0 %.'),
       sec('Level'), ...sectionFields('light', ['exposure', 'ambient', 'moon', 'fogD', 'fogColor', 'lamps', 'termGlow']),
       note('Level lighting applies on the BLACKOUT map (live in a match).'),
+      sec('Muzzle flash'), ...sectionFields('light', ['muzzleK', 'muzzleRange', 'suppFlash']),
+      note('Every shot lights its surroundings for a few hundredths of a second (player, bots and peers). Suppressed x: how much of the light and flash a suppressed gun keeps (0 = none). Uses the fixed pool of shot lights: none on the low and ultra-light quality profiles.'),
       el('div', { class: 'btns' }, btn('Reset lighting', () => { BOCFG.resetSection('light'); render(); toast('Lighting reset'); }, 'dng'))];
   }
   function tLook() {

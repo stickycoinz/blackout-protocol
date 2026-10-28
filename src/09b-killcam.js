@@ -226,7 +226,7 @@ function updateKillcam(dt) {
     if (ev.type === 'shot') {
       // recul et douille de l'arme montrée à cet instant de la relecture (pas de l'arme actuelle du tueur)
       if (ev.sid === ki) { const d = VM.curDef; vmKick(d, KC.adsW > 0.5); if (!d.bolt && !d.pump) vmShell(d); sfxGun(ev.kind, null); flashLight(camera.position, 3, 8, 0.05); KC.lastShot = ev.t; }
-      else { const mute = ev.kind.endsWith('_s'); muzzleWorldFx(ev.m, ev.d, mute); if (!mute) flashLight(ev.m, 2.5, 7, 0.05); sfxGun(ev.kind, ev.m); }
+      else { const mute = ev.kind.endsWith('_s'); muzzleWorldFx(ev.m, ev.d, mute); muzzleLight(ev.m, mute, 2.5, 7, 0.05); sfxGun(ev.kind, ev.m); }
     } else if (ev.type === 'knife') {
       if (ev.sid === ki) { KC.knifeT = KNIFE_DUR; KC.knifeNew = ev.neu; KC.knifeSnd = false; } // le coup part : le même geste que dans la partie
     } else if (ev.type === 'melee') {

@@ -528,7 +528,7 @@
     if (!spy) return kb('LMB') + 'fire &nbsp;' + kb('RMB') + 'aim &nbsp;' + kb('R') + 'reload &nbsp;' + kb('1') + kb('2') + 'weapons &nbsp;' + kb('L') + 'flashlight<br>'
       + kb('SHIFT') + 'sprint &nbsp;' + kb('C') + 'crouch &nbsp;' + kb('SPACE') + 'jump &nbsp;' + kb('TAB') + 'scores &nbsp;' + kb('F9') + 'loadout &nbsp;' + kb('F10') + 'editor &nbsp;<i>shoot lamps out to kill the light</i>';
     const g = (me && me.boGad) || { smoke: 0, flash: 0, knife: 0, decoy: 0 }, n = (k) => '<em' + (g[k] > 0 ? '' : ' class="z"') + '>×' + g[k] + '</em>';
-    return kb('E') + 'hack / takedown / extract &nbsp;' + kb('F') + kb('LMB') + 'takedown &nbsp;' + kb('R') + 'roll (i-frames)<br>'
+    return kb('E') + 'hack / takedown / extract &nbsp;' + kb('F') + kb('LMB') + 'takedown &nbsp;' + kb('ALT') + 'roll (i-frames)<br>'
       + kb('G') + 'smoke ' + n('smoke') + ' &nbsp;' + kb('Q') + 'flashbang ' + n('flash') + ' &nbsp;' + kb('X') + kb('LMB') + 'knife ' + n('knife') + ' &nbsp;' + kb('V') + 'decoy ' + n('decoy') + '<br>'
       + kb('SPACE') + 'climb / hang &nbsp;' + kb('C') + kb('CTRL') + 'crouch (cloak in shadow) &nbsp;' + kb('SHIFT') + 'sprint &nbsp;' + kb('TAB') + 'scores &nbsp;' + kb('F9') + 'loadout &nbsp;' + kb('F10') + 'editor';
   };

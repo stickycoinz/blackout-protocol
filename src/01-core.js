@@ -860,6 +860,14 @@ function flashLight(pos, intensity, dist, dur, color) {
   best.light.position.copy(pos); best.light.distance = dist; best.light.color.setHex(color || 0xffb060);
   best.peak = intensity; best.dur = dur; best.t = dur; best.light.intensity = intensity;
 }
+/* Muzzle light of a shot, from the same pool (no light is ever added or removed). k / range scale every gun; supp is what a suppressed
+   gun keeps (0: none, Riposte's default), suppFx the size of its muzzle flash sprite. A mode (BLACKOUT) sets them each frame. */
+const MUZ = { k: 1, range: 1, supp: 0, suppFx: 0 };
+function muzzleLight(pos, silent, I, D, dur, ent) {
+  const s = silent ? MUZ.supp : 1;
+  if (!(s > 0) || !(MUZ.k > 0)) return;
+  flashLight(pos, I * MUZ.k * s, D * MUZ.range * (silent ? Math.max(0.5, Math.sqrt(s)) : 1), dur);
+}
 /* Les lumières d'éclair restent dans la scène (à intensité nulle) 2 s après le dernier éclair : le nombre de lumières déclarées aux shaders ne
    change plus à chaque balle. Un éclair dure quelques centièmes de seconde, l'intervalle entre deux balles d'un fusil un dixième : les lumières
    apparaissaient et disparaissaient à chaque tir, et chaque fois three.js réévaluait toutes les matières éclairées visibles (getParameters,
