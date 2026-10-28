@@ -23,7 +23,7 @@
       botFlash: num(2, 0, 3, 1, 'Bot / peer torch lights (next map load)'),
       flashDrain: num(0, 0, 20, 0.5, 'Battery drain (%/s, 0 = off)'),
       flashRecharge: num(4, 0, 20, 0.5, 'Battery recharge (%/s)'),
-      exposure: num(1.22, 0.2, 4, 0.01, 'Exposure'), ambient: num(0.42, 0, 3, 0.01, 'Ambient (sky fill)'), moon: num(0.3, 0, 4, 0.01, 'Moonlight'),
+      exposure: num(1.4, 0.2, 4, 0.01, 'Exposure'), ambient: num(0.55, 0, 3, 0.01, 'Ambient (sky fill)'), moon: num(0.3, 0, 4, 0.01, 'Moonlight'),
       fogD: num(0.012, 0, 0.08, 0.001, 'Fog density'), fogColor: col('#080913', 'Fog colour'),
       lamps: num(2.6, 0, 10, 0.1, 'Street lamp intensity'), termGlow: num(1, 0, 4, 0.05, 'Terminal screen glow'),
       muzzleK: num(1, 0, 5, 0.05, 'Muzzle light intensity'), muzzleRange: num(1, 0.2, 4, 0.05, 'Muzzle light range'),
@@ -348,7 +348,9 @@
   /* ---------- multiplayer: the host's config travels with the start message ---------- */
   const _sendTo = netSendTo;
   netSendTo = function (pl, m) {
-    if (m && m.t === 'start' && NET.role === 'host') { try { m = Object.assign({}, m, { bocfg: JSON.parse(JSON.stringify(BOCFG.v)) }); } catch (e) {} }
+    // pass 14b: the config no longer rides inside 'start' (PeerJS json channels drop any message over 16 kB, and that
+    // dropped the start too); it goes first as chunked 'bocfg' messages (09zzb-blackout-admin.js), the reliable channel keeps the order
+    if (m && m.t === 'start' && NET.role === 'host' && window.BOADMIN) { try { BOADMIN.sendFull(pl); } catch (e) {} }
     return _sendTo(pl, m);
   };
   const _startOnline = netStartOnline;

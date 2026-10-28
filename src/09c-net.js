@@ -14,7 +14,7 @@
    séries). Modèle « le tireur décide » : celui qui tire calcule ses touches
    et les adresse à la victime, qui applique les dégâts et annonce sa mort.
    ========================================================================== */
-const NET_PROTO = 10, NET_LOAD_WAIT = 45, NET_MAX = 8, NET_TEAM = 6, NET_PREFIX = 'cod-lc1-', NET_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const NET_PROTO = 11, NET_LOAD_WAIT = 45, NET_MAX = 8, NET_TEAM = 6, NET_PREFIX = 'cod-lc1-', NET_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const NET_WSPECIAL = { nade: _t('Grenade'), tknife: _t('Couteau de lancer'), air: _t('Frappe aérienne'), knife: _t('Couteau'), heli: _t('Hélicoptère'), drone: _t('Drone kamikaze'), mecha: _t('Mecha'), fall: _t('Chute'), zone: _t('Désert') }; // fall : chute dans le vide (voidDeath) ; zone : resté hors de la zone ronde (zoneDeath, 02-relief.js)
 const NET = {
   role: 'off', peer: null, hostConn: null, me: '', code: '', joined: false, t0: 0, hostSeen: 0, hbT: 0, lastSend: 0,
