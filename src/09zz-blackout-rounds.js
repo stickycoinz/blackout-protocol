@@ -63,7 +63,7 @@
     RS.pending = false; RS.n++;
     hideBanner(); specOff();
     if (PL.ent && !PL.ent.alive) { try { R._respawnPlayer(); } catch (err) { console.warn('BO next round respawn', err); } }
-    try { if (typeof KC !== 'undefined') KC.pending = null; } catch (err) {}
+    try { if (typeof KC !== 'undefined') { KC.pending = null; if (KC.active && typeof endKillcam === 'function') endKillcam(); } } catch (err) {}
     R.setup();
     if (isHost()) { try { netBroadcast({ t: 'bonext', n: RS.n }, true); } catch (err) {} }
     try { hudMsg('ROUND ' + RS.n + ' · ' + winsTxt(), 'big', 3); } catch (err) {}
@@ -95,11 +95,13 @@
 
   /* ---------- respawn (on) ---------- */
   const canReturn = (e, pre) => { const g = GM(); return !!g.respawn && (e.team !== SPY || !g.spyLives || (e.boDeaths || 0) + (pre ? 1 : 0) < g.spyLives); };
-  R.spyCanReturn = () => entities.some((e) => !e.off && e.team === SPY && !e.alive && e.boRespAt != null);
+  // pass 16: a spy who died this very frame (his respawn not booked yet) counts too, so the last spy down never ends a respawn round
+  R.spyCanReturn = () => entities.some((e) => !e.off && e.team === SPY && !e.alive && (e.boRespAt != null || (e._boWasAlive && !e.isRemote && (!isClient() || e.isPlayer) && canReturn(e, true))));
   function respawnEnt(e) {
     e.boRespAt = null;
     const l = R.spawnCount ? R.spawnCount(e.team) : 4, i = Math.floor(Math.random() * l);
     if (e.isPlayer) {
+      try { if (typeof KC !== 'undefined' && KC.active && typeof endKillcam === 'function') endKillcam(); } catch (err) {}
       R._respawnPlayer();
       R.placeAt(e, e.team, i);
       if (e.team === MERC) {
@@ -127,7 +129,7 @@
   function respawnTick() {
     if (R.roundOver) return;
     for (const e of entities) {
-      if (e.off || e.isRemote) { e._boWasAlive = e.alive; continue; }
+      if (e.off || e.isRemote || (isClient() && !e.isPlayer)) { e._boWasAlive = e.alive; continue; }
       if (e._boWasAlive && !e.alive) { e.boDeaths = (e.boDeaths || 0) + 1; e.boRespAt = canReturn(e) ? MATCH.time + Math.max(1, GM().respawnDelay) : null; }
       e._boWasAlive = e.alive;
       if (!e.alive && e.boRespAt != null && MATCH.time >= e.boRespAt) { if (!GM().respawn) e.boRespAt = null; else { try { respawnEnt(e); } catch (err) { console.warn('BO respawn', err); e.boRespAt = null; } e._boWasAlive = e.alive; } }
@@ -270,7 +272,7 @@
     try {
       if (!isBo()) { specOff(); hideBanner(); return; }
       if (MATCH.limit < 999) MATCH.limit = 999;
-      if (MATCH.state === 'playing' && !isClient()) respawnTick();
+      if (MATCH.state === 'playing') respawnTick(); // pass 16: a client brings back its own player (the host is told, 'bors')
       if (RS.pending) {
         const left = RS.nextAt - MATCH.time, n = document.getElementById('boRoundNext');
         if (n) n.textContent = 'NEXT ROUND IN ' + Math.max(0, Math.ceil(left));

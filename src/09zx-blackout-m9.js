@@ -38,7 +38,7 @@
   /* ---------- merc armor vs spy rounds ---------- */
   const _ad = applyDamage;
   applyDamage = function (victim, dmg, attacker, weapon, head, dir, srcPos, life) {
-    if (on() && victim && attacker && victim.alive && victim.team === MERC && attacker.team === SPY && typeof weapon === 'string' && typeof dmg === 'number') {
+    if (on() && !(typeof NET !== 'undefined' && NET.hitQ) && victim && attacker && victim.alive && victim.team === MERC && attacker.team === SPY && typeof weapon === 'string' && typeof dmg === 'number') {
       const sl = attacker.arms && attacker.arms.slots && attacker.arms.slots[attacker.arms.cur];
       if (sl && sl.def && sl.def.name === weapon) {
         const S = SP(), d = attacker.pos && victim.pos ? attacker.pos.distanceTo(victim.pos) : 99;

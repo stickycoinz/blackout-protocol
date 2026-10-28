@@ -32,7 +32,8 @@
   const _applyDamage = applyDamage;
   applyDamage = function (victim, dmg, attacker, weapon, head, dir, srcPos, life) {
     if (boOn() && victim && attacker && attacker !== victim && victim.team === attacker.team) return; // no team kills in BLACKOUT
-    if (boOn() && typeof dmg === 'number') dmg *= 100 / Math.max(1, G().health); // player health setting: scale incoming damage
+    // player health setting: scale incoming damage (online, once, on the shooter's machine: a hit arriving from the net is already scaled)
+    if (boOn() && typeof dmg === 'number' && !(typeof NET !== 'undefined' && NET.hitQ)) dmg *= 100 / Math.max(1, G().health);
     return _applyDamage(victim, dmg, attacker, weapon, head, dir, srcPos, life);
   };
   // whatever mode the menu last used (free-for-all made everyone an enemy, so a merc could only kill his teammate), BLACKOUT is a team match
@@ -53,7 +54,8 @@
   /* one life: no respawns in BLACKOUT */
   if (typeof respawnPlayer === 'function') {
     const _rp = respawnPlayer; R._respawnPlayer = _rp;
-    respawnPlayer = function () { if (boOn()) { if (PL.ent) { PL.ent.alive = false; PL.ent.respawnT = Infinity; } return; } return _rp.apply(this, arguments); };
+    // pass 16: a killcam ending after the next round already brought the player back must not kill him again
+    respawnPlayer = function () { if (boOn()) { if (PL.ent && !PL.ent.alive) PL.ent.respawnT = Infinity; return; } return _rp.apply(this, arguments); };
   }
 
   /* speed settings: spies and mercs move at their own multiplier (scales the weapon mobility for this one move) */
@@ -101,6 +103,7 @@
   finKicker = function () { return boOn() ? (R.kicker || 'TIME UP') : _finKicker(); };
   function endRound(team, kicker, reason) {
     if (R.roundOver || MATCH.state !== 'playing') return;
+    if (R.netEndGuard && R.netEndGuard(team, kicker, reason)) return; // pass 16: online clients never decide a round, they ask the host
     R.roundOver = true; R.winner = team; R.kicker = kicker; R.reason = reason;
     log('END ' + (team === SPY ? 'SPIES' : 'MERCS') + ' ' + kicker);
     try { matchFinish(); } catch (err) { console.warn('BLACKOUT finish', err); }
@@ -157,7 +160,13 @@
     const bots = entities.filter((e) => !e.isPlayer && !e.isRemote);
     for (const e of bots) { e.off = true; e.alive = false; e.respawnT = Infinity; e.target = null; if (e.model) { e.model.rag = null; e.model.root.visible = false; } e.bo = null; }
     const counts = { [myTeam]: 1, [other]: 0 }, idx = { [myTeam]: 1, [other]: 0 };
-    for (const e of bots) {
+    // pass 16 online: the host counts every human (remote players by their team); a client runs no bots of its own
+    const netOn = MATCH.online && typeof NET !== 'undefined' && NET.on, netCl = netOn && NET.role !== 'host';
+    if (netOn) {
+      for (const e of entities) if (e.isRemote && !e.remoteBot && !e.off && (e.team === MERC || e.team === SPY)) { counts[e.team]++; idx[e.team]++; }
+      if (!NET.cfg.bots) { want[MERC] = Math.min(want[MERC], counts[MERC]); want[SPY] = Math.min(want[SPY], counts[SPY]); }
+    }
+    if (!netCl) for (const e of bots) {
       let t = -1;
       if (counts[myTeam] < want[myTeam]) t = myTeam; else if (counts[other] < want[other]) t = other;
       if (t < 0) break;
@@ -168,12 +177,14 @@
       if (e.off) continue;
       if (e.team === SPY) kaySpy(e); else unKay(e);
     }
+    if (netOn && !netCl) for (const e of bots) if (e.off && e.netBot) { try { netBotOff(e); } catch (err) {} e.off = true; }
     soldierLookAll();
     const n = { [MERC]: 0, [SPY]: 0 };
     PL.ent.alive = true; PL.ent.off = false; PL.ent.respawnT = 0;
     for (const e of [PL.ent].concat(bots)) {
       if (e.off) continue;
       if (!e.isPlayer) { try { spawnEntity(e); } catch (err) { console.warn('BO spawn', err); } }
+      if (!e.isPlayer && netOn && !netCl && !e.netBot && typeof NET !== 'undefined') { e.netBot = true; e.netId = NET.me + '~b' + e.id; e.netQ = { seq: 0, list: [] }; }
       placeAt(e, e.team, n[e.team]++);
       e.alive = true; e.health = 100; e.respawnT = Infinity; e.protT = 0; e.boRollT = 0; e.boInteract = false;
       if (e.team === SPY && e.model && e.model.gun) e.model.gun.visible = false;
@@ -251,7 +262,8 @@
     if (s.isPlayer) PL.yaw = s.yaw;
     const dir = new THREE.Vector3(m.pos.x - s.pos.x, 0, m.pos.z - s.pos.z); if (dir.lengthSq() < 1e-6) dir.set(0, 0, -1); dir.normalize();
     m.protT = 0;
-    killEnt(m, s, NET_WSPECIAL.knife, false, dir, s.spawnAt);
+    // pass 16: a remote victim dies on his own machine (Riposte net hit); a local one dies here
+    if (m.isRemote) applyDamage(m, 250, s, NET_WSPECIAL.knife, false, dir); else killEnt(m, s, NET_WSPECIAL.knife, false, dir, s.spawnAt);
     s.score = (s.score || 0) + 50;
     R.takedowns++;
     log('TAKEDOWN ' + s.name + ' > ' + m.name);
@@ -263,7 +275,7 @@
   function finishHack(t, who) {
     t.hacked = true; t.prog = 1; t.by = null;
     log('HACK ' + t.id + ' by ' + (who ? who.name : '?'));
-    try { hudMsg('TERMINAL ' + t.id + ' HACKED (' + hackedCount() + '/' + R.hackNeed + ')' + (extractOpen() ? ': EXTRACT OPEN AT HACK SPAWN' : ''), PL.ent.team === SPY ? 'xp' : 'enemy', 3); } catch (err) {}
+    try { hudMsg('TERMINAL ' + t.id + ' HACKED (' + hackedCount() + '/' + R.hackNeed + ')' + (extractOpen() ? ' · EXTRACT OPEN · REACH HACK SPAWN' : ''), PL.ent.team === SPY ? 'xp' : 'enemy', 3); } catch (err) {}
     if (who && who.isPlayer) { try { xpPopup('+200', 'TERMINAL ' + t.id); } catch (err) {} }
     if (window.BO_TERM_FX) try { BO_TERM_FX(t); } catch (err) {}
     try { if (R.alarmHack) R.alarmHack(t, who); } catch (err) {}
@@ -336,6 +348,7 @@
       if (holdE) { R.extractProg = Math.min(1, R.extractProg + dt / Math.max(0.2, g.extractTime)); e.boInteract = true; }
       else R.extractProg = Math.max(0, R.extractProg - dt);
       prompt = holdE ? 'EXTRACTING… ' + Math.floor(R.extractProg * 100) + '%' : 'HOLD ' + BK('hack') + ': EXTRACT'; prog = R.extractProg;
+      if (R.extractProg >= 1 && R.netClientOn && R.netClientOn()) prompt = 'EXTRACTING… 100% · CONFIRMING WITH HOST';
       if (R.extractProg >= 1) { log('EXTRACT player'); endRound(SPY, 'SPIES EXTRACTED', e.name + ' extracted with the data'); }
     } else {
       R.extractProg = Math.max(0, R.extractProg - dt);
@@ -503,7 +516,7 @@
   }
   const _updateBot = updateBot;
   updateBot = function (b, dt, now) {
-    if (boOn() && b && b.team === SPY && !b.isRemote && !MATCH.online) return spyBot(b, dt, now);
+    if (boOn() && b && b.team === SPY && !b.isRemote && (!MATCH.online || (typeof NET !== 'undefined' && NET.role === 'host'))) return spyBot(b, dt, now);
     if (boOn() && b && !b.alive && !b.off) { animSoldier(b, dt); return; } // one life: dead mercs stay down
     return _updateBot(b, dt, now);
   };
@@ -524,7 +537,7 @@
 #boHud .bo-keys b{display:inline-block;min-width:18px;padding:0 5px;margin-right:4px;border:1px solid rgba(255,255,255,.35);text-align:center;font-weight:700}
 #boHud .bo-mk{position:absolute;transform:translate(-50%,-100%);font-weight:800;font-size:12px;letter-spacing:.1em;text-align:center;white-space:nowrap;text-shadow:0 1px 3px #000}
 #boHud .bo-mk i{display:block;font-style:normal;font-weight:600;font-size:10px;opacity:.85}
-#boHud .bo-mk.t{color:#4fd1b5}#boHud .bo-mk.h{color:#7a8590}#boHud .bo-mk.x{color:#ffd166}#boHud .bo-mk.p{color:#ff5a5a}
+#boHud .bo-mk.t{color:#4fd1b5}#boHud .bo-mk.h{color:#7a8590}#boHud .bo-mk.x{color:#ffd166}#boHud .bo-mk.x.edge{font-size:1.15em;text-shadow:0 0 8px #000,0 0 14px #ffd166}#boHud .bo-mk.p{color:#ff5a5a}
 #boHud .bo-state{position:absolute;right:16px;bottom:16px;font-weight:800;font-size:12px;letter-spacing:.14em;padding:6px 10px;background:rgba(10,14,18,.5)}`;
     document.head.appendChild(css);
     const el = document.createElement('div'); el.id = 'boHud';
@@ -539,11 +552,13 @@
     let m = HUD_BO.mk[key];
     if (!m) { m = document.createElement('div'); m.className = 'bo-mk'; HUD_BO.el.querySelector('.bo-mks').appendChild(m); HUD_BO.mk[key] = m; }
     _pv.set(x, y, z).project(camera);
-    const vis = _pv.z < 1 && Math.abs(_pv.x) < 1.1 && Math.abs(_pv.y) < 1.1;
+    let vis = _pv.z < 1 && Math.abs(_pv.x) < 1.1 && Math.abs(_pv.y) < 1.1, px = _pv.x, py = _pv.y, edge = false;
+    // pass 16: the extract marker never leaves the screen, it sticks to the edge pointing the way
+    if (!vis && cls === 'x') { if (_pv.z >= 1) { px = -px; py = -py; } const k = Math.max(Math.abs(px), Math.abs(py), 1e-3) / 0.86; px /= k; py /= k; vis = edge = true; }
     m.style.display = vis ? 'block' : 'none';
     if (!vis) return;
-    m.className = 'bo-mk ' + cls;
-    const sx = (_pv.x * 0.5 + 0.5) * innerWidth; let sy = (-_pv.y * 0.5 + 0.5) * innerHeight;
+    m.className = 'bo-mk ' + cls + (edge ? ' edge' : '');
+    const sx = (px * 0.5 + 0.5) * innerWidth; let sy = (-py * 0.5 + 0.5) * innerHeight;
     if (cls === 'p') { // pass 9: a ping (decoy) steps up above any marker it would cover
       for (let k = 0; k < 4; k++) { let hit = false; for (const o in HUD_BO.mk) { const q = HUD_BO.mk[o]; if (q === m || q.style.display === 'none' || q._x == null) continue; if (Math.abs(q._x - sx) < 110 && Math.abs(q._y - sy) < 30) { hit = true; break; } } if (!hit) break; sy -= 32; }
     }
@@ -560,7 +575,7 @@
     const hk = hackedCount(), sa = teamAlive(SPY).length, ma = teamAlive(MERC).length;
     const obj = el.querySelector('.bo-obj');
     const txt = spy
-      ? (extractOpen() ? 'EXTRACT AT HACK SPAWN' : 'HACK TERMINALS ' + hk + '/' + R.hackNeed) + ' · MERCS LEFT ' + ma
+      ? (extractOpen() ? 'EXTRACT OPEN · REACH HACK SPAWN' : 'HACK TERMINALS ' + hk + '/' + R.hackNeed) + ' · MERCS LEFT ' + ma
       : (extractOpen() ? 'STOP THE EXTRACT AT HACK SPAWN' : 'DEFEND TERMINALS ' + hk + '/' + R.hackNeed + ' HACKED') + ' · SPIES LEFT ' + sa;
     if (obj._t !== txt) { obj.textContent = txt; obj._t = txt; }
     const p = el.querySelector('.bo-prompt'), bar = el.querySelector('.bo-bar');
@@ -612,6 +627,7 @@
     rebrand();
     if (!boOn()) { if (HUD_BO.el) HUD_BO.el.style.display = 'none'; return; }
     if (MATCH.state !== 'playing') { hudTick(); R.prevKeys = Object.assign({}, KEYS); return; }
+    if (!(R.netClientOn && R.netClientOn())) { const hn = Math.max(1, Math.min(R.terminals.length || 1, Math.round(G().hacksNeeded))); if (hn !== R.hackNeed) R.hackNeed = hn; }
     // terminals nobody works on cool down slowly
     for (const t of R.terminals) { if (!t.hacked && !(t.by && t.by.alive && t.by.boInteract)) { t.prog = Math.max(0, t.prog - dt * 0.12); if (t.by && !t.by.boInteract) t.by = null; } }
     alarmTick(dt);
@@ -632,7 +648,7 @@
     hudTick();
     R.prevKeys = Object.assign({}, KEYS);
   }
-  R.tick = tick; R.hackedCount = hackedCount; R.extractOpen = extractOpen; R.marker = marker; R.mercUnaware = mercUnaware; R.terminalNear = terminalNear;
+  R.tick = tick; R.extractPt = extractPt; R.hackedCount = hackedCount; R.extractOpen = extractOpen; R.marker = marker; R.mercUnaware = mercUnaware; R.terminalNear = terminalNear;
   const _frame = frame;
   frame = function (now) {
     _frame(now);
