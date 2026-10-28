@@ -70,6 +70,14 @@ body.bo-on .fin-tint{background:radial-gradient(ellipse at center,transparent 30
 #boRole button.on[data-role=merc]{color:#cfeaff!important;border-color:#9fd8ff!important;background:rgba(10,30,44,.85)!important}
 #boRole #boEdBtn{color:#e8eef2!important}
 body.bo-hide-role #boRole{display:none!important}
+#boXh{position:fixed;left:50%;top:50%;width:0;height:0;z-index:30;pointer-events:none;display:none;--xs:1;--g:calc(7px*var(--xs));--l:calc(9px*var(--xs))}
+#boXh i{position:absolute;background:#ff2a3d;box-shadow:0 0 4px rgba(255,42,61,.9),0 0 1px #000;transition:transform .12s,background .12s}
+#boXh .t,#boXh .b{width:2px;height:var(--l);left:-1px}#boXh .l,#boXh .r{height:2px;width:var(--l);top:-1px}
+#boXh .t{bottom:var(--g)}#boXh .b{top:var(--g)}#boXh .l{right:var(--g)}#boXh .r{left:var(--g)}
+#boXh em{position:absolute;left:-2px;top:-2px;width:4px;height:4px;border-radius:50%;background:#fff;box-shadow:0 0 5px #ff2a3d}
+#boXh.move .t{transform:translateY(-4px)}#boXh.move .b{transform:translateY(4px)}#boXh.move .l{transform:translateX(-4px)}#boXh.move .r{transform:translateX(4px)}
+#boXh.hot i{background:#fff;box-shadow:0 0 6px #ff2a3d,0 0 12px #ff2a3d}#boXh.hot.near .t{transform:translateY(3px)}#boXh.hot.near .b{transform:translateY(-3px)}#boXh.hot.near .l{transform:translateX(3px)}#boXh.hot.near .r{transform:translateX(-3px)}
+#boXh.hang{opacity:.35}
 body.bo-board #boHud .bo-mks{display:none}
 body.bo-load #lockPrompt,body.bo-load #boHud,body.bo-load #cd{display:none!important}
 #boLoad{position:fixed;inset:0;z-index:100001;display:none;flex-direction:column;color:#dfe7ec;font:500 13px/1.3 var(--bo-mono);user-select:none;
@@ -234,7 +242,7 @@ body.bo-load #lockPrompt,body.bo-load #boHud,body.bo-load #cd{display:none!impor
     root.append(el('header', null,
       el('div', { class: 'brand' }, el('b', null, 'BLACKOUT PROTOCOL'), el('span', null, '// LOADOUT · OPERATION KHAMSIN · CLEARANCE: ALL')),
       el('div', { class: 'roles' }, rb('merc', 'MERC', 'hold the facility'), rb('spy', 'SPY', 'hack and extract')),
-      el('div', { class: 'stat' }, el('b', null, hold ? 'ROUND ON HOLD' : pre ? 'PRE-DEPLOY' : 'ROUND LIVE'), hold ? 'countdown waits for you' : pre ? 'applies now' : 'changes apply next round')));
+      el('div', { class: 'stat' }, el('b', null, hold ? 'ROUND ON HOLD' : pre ? 'PRE-DEPLOY' : 'ROUND LIVE'), hold ? 'countdown waits for you' : pre ? 'applies now' : 'guns swap now')));
     const left = el('div', { class: 'col' }, el('h4', null, spy ? 'SPY KIT' : 'MERC KIT'));
     if (spy) {
       left.append(slotBtn('sidearm', 'SIDEARM', l.spy.secondary, l.spy.secondaryAtt));
@@ -249,7 +257,7 @@ body.bo-load #lockPrompt,body.bo-load #boHud,body.bo-load #cd{display:none!impor
     const right = el('div', { class: 'col' }, ...detail(ref), ...(spy ? gadgets() : []));
     root.append(el('main', null, left, mid, right));
     root.append(el('footer', null, el('div', { class: 'hint' }, el('b', null, 'F9'), 'close ', el('b', null, 'ENTER'), 'deploy ', el('b', null, 'F10'), 'editor   · 18 guns, every attachment, no unlocks'),
-      el('button', { type: 'button', class: 'deploy', onclick: () => deploy() }, pre ? 'DEPLOY' : 'SAVE')));
+      el('button', { type: 'button', class: 'deploy', onclick: () => deploy() }, pre ? 'DEPLOY' : 'EQUIP')));
   }
   function setRole(r) {
     if (role() === r) return;
@@ -263,13 +271,19 @@ body.bo-load #lockPrompt,body.bo-load #boHud,body.bo-load #cd{display:none!impor
     css();
     if (!root) { root = el('div', { id: 'boLoad' }); for (const t of ['mousedown', 'mouseup', 'click', 'wheel', 'contextmenu']) root.addEventListener(t, (e) => e.stopPropagation()); document.body.appendChild(root); }
     pre = !!preSpawn;
-    try { if (document.pointerLockElement) document.exitPointerLock(); } catch (e) {}
-    try { for (const k in KEYS) KEYS[k] = false; } catch (e) {}
+    freeMouse();
+    try { for (const k in KEYS) KEYS[k] = false; PL.held = false; } catch (e) {}
+    try { showLockPrompt(false); } catch (e) {}
     render(); bodyTick();
   }
   function close() { if (!root) return; root.className = ''; pre = false; bodyTick(); }
+  /* pass 9: the mouse is free the moment the screen opens (no Esc, no pause menu), and captured again on DEPLOY */
+  function freeMouse() {
+    try { if (document.pointerLockElement) { LOCK.resumeT = performance.now(); LOCK.scriptExit = true; document.exitPointerLock(); } } catch (e) {}
+  }
   function deploy() {
     BOCFG.saveNow();
+    if (MATCH.state === 'paused' && bo()) { try { $('pause').classList.remove('show'); MATCH.state = 'playing'; LOCK.resumeT = performance.now(); } catch (e) {} }
     const live = MATCH.state === 'playing' && bo();
     const now = live && (pre || (typeof cdOn === 'function' && cdOn()));
     const myTeam = PL && PL.ent ? PL.ent.team : -1, want = role() === 'spy' ? SPY : MERC;
@@ -277,7 +291,10 @@ body.bo-load #lockPrompt,body.bo-load #boHud,body.bo-load #cd{display:none!impor
     if (now) {
       applying = true;
       try { R.setup(); } catch (err) { console.warn('BO deploy', err); } finally { applying = false; }
-    } else if (live) { try { hudMsg(myTeam !== want ? 'ROLE SWITCH: NEXT ROUND' : 'LOADOUT SAVED: NEXT ROUND', 'xp', 2); } catch (e) {} }
+    } else if (live && myTeam !== want) { try { hudMsg('ROLE SWITCH: NEXT ROUND', 'xp', 2); } catch (e) {} }
+    else if (live && PL.ent.alive) { // same side mid-round: the new guns now
+      try { if (myTeam === SPY) BOCFG.giveSpyLoadout(); else { BOCFG.giveMercLoadout(); sfxMech('draw'); } hudMsg('LOADOUT EQUIPPED', 'xp', 1.5); } catch (e) { console.warn('BO loadout', e); }
+    }
     if (live) { try { LOCK.inputT = performance.now(); requestLock(true); } catch (e) {} }
   }
   /* before the round: the countdown waits (solo; online it never holds anyone) */
@@ -297,6 +314,58 @@ body.bo-load #lockPrompt,body.bo-load #boHud,body.bo-load #cd{display:none!impor
     else if (e.code === 'Escape') { if (pre) deploy(); else close(); }
   }, true);
   addEventListener('keyup', (e) => { if (isOpen() && bo()) e.stopPropagation(); }, true);
+  /* while the screen is open: no pause on the lost capture, no capture request from the game, a capture that lands anyway is given back */
+  if (typeof pauseGame === 'function') { const _pg = pauseGame; pauseGame = function () { if (isOpen() && bo()) return; return _pg.apply(this, arguments); }; }
+  if (typeof requestLock === 'function') { const _rl = requestLock; requestLock = function () { if (isOpen() && bo()) return; return _rl.apply(this, arguments); }; }
+  document.addEventListener('pointerlockchange', () => { if (document.pointerLockElement && isOpen() && bo()) freeMouse(); });
+  /* BLACKOUT skips Riposte's class (preset) page: straight into the match, where the BLACKOUT loadout screen opens */
+  const boFlow = (F) => !!F && ((F.map || (typeof Settings !== 'undefined' && Settings.map)) === 'blackout');
+  if (typeof uiGo === 'function') {
+    const _uiGo = uiGo;
+    uiGo = function (name) {
+      const r = _uiGo.apply(this, arguments);
+      if (name === 'deploy' && typeof UI !== 'undefined' && boFlow(UI.flow)) { try { menuDeploy(); } catch (e) { console.warn('BO skip deploy', e); } }
+      return r;
+    };
+  }
+  /* the pause menu's class tab (Riposte presets) opens the BLACKOUT loadout instead: presets never touch a BLACKOUT round */
+  if (typeof pmView === 'function') {
+    const _pm = pmView;
+    pmView = function (name) { if (name === 'class' && bo()) { _pm.call(this, 'home'); open(false); return; } return _pm.apply(this, arguments); };
+  }
+  if (typeof giveLoadout === 'function') {
+    const _gl = giveLoadout;
+    giveLoadout = function () {
+      const r = _gl.apply(this, arguments);
+      if (bo() && PL && PL.ent && MATCH.state !== 'menu') { try { if (PL.ent.team === SPY) BOCFG.giveSpyLoadout(); else BOCFG.giveMercLoadout(); } catch (e) { console.warn('BO loadout', e); } }
+      return r;
+    };
+  }
+
+  /* ---------- spy crosshair: the camera looks exactly along the aim (06za), so the centre of the screen is where the knife, the sidearm
+     and the throw go; it tightens and brightens over a merc in knife range ---------- */
+  let xh = null, xhT = 0;
+  function xhTick() {
+    requestAnimationFrame(xhTick);
+    const S = SP();
+    const show = bo() && MATCH.state === 'playing' && PL && PL.ent && PL.ent.alive && PL.ent.team === SPY && S.xhair !== false && !isOpen()
+      && !(window.BOEDITOR && BOEDITOR.isOpen && BOEDITOR.isOpen()) && !(PL.flashT > 0.3);
+    if (!xh) { if (!show) return; css(); xh = el('div', { id: 'boXh' }, el('i', { class: 't' }), el('i', { class: 'r' }), el('i', { class: 'b' }), el('i', { class: 'l' }), el('em')); document.body.appendChild(xh); }
+    xh.style.display = show ? 'block' : 'none'; if (!show) return;
+    xh.style.setProperty('--xs', String(S.xhairSize || 1));
+    const now = performance.now(); if (now - xhT < 90) return; xhT = now;
+    let hot = false, near = false;
+    try {
+      const c = camera.position, f = camFwd(new THREE.Vector3());
+      const w = rayWorld(c.x, c.y, c.z, f.x, f.y, f.z, 60, 1), h = rayEntities(c, f, w ? w.t : 60, PL.ent);
+      if (h && h.ent && h.ent.team === MERC) { hot = true; near = h.t - c.distanceTo(PL.ent.pos) < 22; }
+    } catch (e) {}
+    xh.classList.toggle('hot', hot); xh.classList.toggle('near', near);
+    xh.classList.toggle('move', !!(PL.ent.vel && Math.hypot(PL.ent.vel.x, PL.ent.vel.z) > 2.5));
+    xh.classList.toggle('hang', !!PL.ent.boClimb);
+  }
+  requestAnimationFrame(xhTick);
+
   window.BOLOADOUT = {
     open, close, isOpen, deploy, render,
     onRound() { if (applying) return; if (MATCH.online || !SP().loadoutScreen) return; open(true); },

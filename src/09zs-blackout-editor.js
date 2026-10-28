@@ -197,6 +197,7 @@
       sec('Shadow cloak'), ...sectionFields('spy', ['cloak', 'cloakK', 'cloakDark', 'cloakSpeed', 'cloakBody']),
       sec('Climb (SPACE at a ledge)'), ...sectionFields('spy', ['climb', 'climbH', 'climbTime']),
       sec('World and bots'), ...sectionFields('spy', ['lamps', 'botGadgets', 'loadoutScreen']),
+      sec('Camera and crosshair'), ...sectionFields('spy', ['xhair', 'xhairSize', 'camDown', 'camUp']),
       note('Gadget counts refill when the next round starts. Everything else applies live.'),
       el('div', { class: 'btns' }, btn('Open loadout (F9)', () => { close(); if (window.BOLOADOUT) BOLOADOUT.open(false); }, 'pri'),
         btn('Reset spy kit', () => { BOCFG.resetSection('spy'); render(); toast('Spy kit reset'); }, 'dng'))];

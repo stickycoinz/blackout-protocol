@@ -663,7 +663,12 @@ function boApplySpyCamera(dt) {
   const side = BO.camSide;                                 // +0.7 m to character's right
   const headH = (e.model && e.model._boKay && e.model._boKay.headH) || 1.65;
   const height = headH + 0.3;                              // 0.3 m above the (animated) head; crouch/kneel lower it
-  const pitch = Math.max(-0.4, Math.min(0.4, PL.pitch * 0.5));
+  // pass 9: true orbit pitch (look down far, up a fair way); the camera looks exactly along the aim, so the crosshair is the aim
+  const SPC = (window.BOCFG && BOCFG.v && BOCFG.v.spy) || {};
+  const pDown = SPC.camDown != null ? SPC.camDown : 1.25, pUp = SPC.camUp != null ? SPC.camUp : 0.85;
+  const vp = Math.max(-pDown, Math.min(pUp, PL.pitch - 0.14));
+  const pitch = vp, cp = Math.cos(vp), sp = Math.sin(vp);
+  BO._viewPitch = vp;
 
   // Riposte: yaw 0 looks -Z. Forward / right in XZ:
   const fx = -Math.sin(PL.yaw), fz = -Math.cos(PL.yaw);
@@ -676,10 +681,12 @@ function boApplySpyCamera(dt) {
   // Tried with the full right offset first; in doorways the offset hides the lens behind the jamb,
   // so smaller / centred offsets are tried and the one with the longest clear boom wins.
   const chestY = feetY + 1.25;
-  const camY0 = Math.max(feetY + 0.7, feetY + height - Math.sin(pitch) * dist * 0.28);
+  // boom: up and behind when looking down, low behind when looking up (kept above the floor)
+  const camY0 = Math.max(feetY + 0.4, feetY + height - 0.12 - sp * dist);
+  const hd = dist * cp + 0.25 * (1 - cp);
   const probeOut = new THREE.Vector3();
   function probeBoom(sd, out) {
-    const ix = px - fx * dist + rx * sd, iz = pz - fz * dist + rz * sd;
+    const ix = px - fx * hd + rx * sd, iz = pz - fz * hd + rz * sd;
     const pvx = px + rx * Math.min(0.18, Math.max(0, sd) * 0.26), pvy = feetY + 1.45, pvz = pz + rz * Math.min(0.18, Math.max(0, sd) * 0.26);
     let dx0 = ix - pvx, dy0 = camY0 - pvy, dz0 = iz - pvz;
     const len = Math.hypot(dx0, dy0, dz0);
@@ -742,7 +749,7 @@ function boApplySpyCamera(dt) {
   // If wall-forced close, lift cam and bias further right so body stays lower-left (not a face-fill)
   {
     const dChest = Math.hypot(BO._ideal.x - px, BO._ideal.z - pz);
-    if (dChest < (BO.camMinComfort || 1.35)) {
+    if (dChest < (BO.camMinComfort || 1.35) * Math.max(0.3, cp)) {
       const ox = BO._ideal.x, oy = BO._ideal.y, oz = BO._ideal.z;
       BO._ideal.y = Math.max(BO._ideal.y, feetY + Math.min(1.75, headH + 0.25));
       // nudge further to the right of the body - only if that keeps the lens out of walls and LOS clear
@@ -762,13 +769,7 @@ function boApplySpyCamera(dt) {
   if (!Number.isFinite(camera.position.x)) camera.position.copy(BO._ideal);
 
   // Look ahead - slight left of true forward so body sits lower-LEFT
-  const dNow = Math.hypot(camera.position.x - px, camera.position.z - pz);
-  const lookY = feetY + (dNow < 1.4 ? 0.95 : 1.22) + pitch * 0.55;
-  const look = BO._look.set(
-    px + fx * 2.6 + rx * side * 0.08,  // slight toward camera-right aim → body shifts left
-    lookY,
-    pz + fz * 2.6 + rz * side * 0.08
-  );
+  const look = BO._look.set(camera.position.x + fx * cp * 10, camera.position.y + sp * 10, camera.position.z + fz * cp * 10);
   camera.up.set(0, 1, 0);
   camera.lookAt(look);
   if (BO.debugCam) { try { BO.debugCam(camera, e); } catch (err) {} }

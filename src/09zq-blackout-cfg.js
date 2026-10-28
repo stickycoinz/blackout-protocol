@@ -56,6 +56,8 @@
       cloakSpeed: num(1.6, 0, 5, 0.1, 'Cloak: max speed (m/s)'), cloakBody: num(0.3, 0, 1, 0.05, 'Cloaked: body brightness to mercs (x)'),
       climb: bool(true, 'Wall climb / ledge hang'), climbH: num(3.4, 1, 4.5, 0.1, 'Max climb height (m)'), climbTime: num(0.8, 0.3, 2.5, 0.05, 'Climb-up time (s)'),
       lamps: bool(true, 'Lamps can be shot out'), botGadgets: bool(true, 'Spy bots use gadgets'), loadoutScreen: bool(true, 'Loadout screen before each round'),
+      xhair: bool(true, 'Spy crosshair'), xhairSize: num(1, 0.5, 2.5, 0.05, 'Crosshair size (x)'),
+      camDown: num(1.25, 0.3, 1.45, 0.05, 'Camera: max look down (rad)'), camUp: num(0.85, 0.2, 1.2, 0.05, 'Camera: max look up (rad)'),
     },
   };
   /* weapon fields the editor exposes, read from / written to a WEAPONS def */

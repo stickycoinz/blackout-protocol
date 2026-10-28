@@ -518,7 +518,12 @@
     m.style.display = vis ? 'block' : 'none';
     if (!vis) return;
     m.className = 'bo-mk ' + cls;
-    m.style.left = ((_pv.x * 0.5 + 0.5) * innerWidth) + 'px'; m.style.top = ((-_pv.y * 0.5 + 0.5) * innerHeight) + 'px';
+    const sx = (_pv.x * 0.5 + 0.5) * innerWidth; let sy = (-_pv.y * 0.5 + 0.5) * innerHeight;
+    if (cls === 'p') { // pass 9: a ping (decoy) steps up above any marker it would cover
+      for (let k = 0; k < 4; k++) { let hit = false; for (const o in HUD_BO.mk) { const q = HUD_BO.mk[o]; if (q === m || q.style.display === 'none' || q._x == null) continue; if (Math.abs(q._x - sx) < 110 && Math.abs(q._y - sy) < 30) { hit = true; break; } } if (!hit) break; sy -= 32; }
+    }
+    m._x = sx; m._y = sy;
+    m.style.left = sx + 'px'; m.style.top = sy + 'px';
     const html = label + '<i>' + sub + '</i>'; if (m._h !== html) { m.innerHTML = html; m._h = html; }
   }
   function hudTick() {
