@@ -130,19 +130,36 @@
     if (e.code === 'F10' && e.ctrlKey && e.shiftKey) { e.preventDefault(); e.stopPropagation(); if (!e.repeat) open(); }
   }, true);
 
-  /* ---------- live host sync ---------- */
-  const peers = () => { try { return Math.max(0, [...NET.players.values()].filter((p) => p.id !== NET.me).length); } catch (e) { return 0; } };
+  /* ---------- live host sync ----------
+     PeerJS 1.5 'json' channels refuse (and report as a connection error) any message of 16300 bytes or more, so every
+     config message goes through sendBig: under 4000 characters it is sent as is, above it is cut in 'bocfgc' parts that the
+     guest puts back together. Each config message carries h, a hash of the host's whole synced config; the guest answers
+     'boack' with the hash it applied, so the host's editor shows who is up to date. A guest still behind after 4 s gets
+     the whole config again. */
+  const peers = () => { try { return [...NET.players.values()].filter((p) => p.id !== NET.me); } catch (e) { return []; } };
   const sec = (k) => JSON.stringify(BOCFG.v[k]);
   const full = () => { const o = {}; for (const k of SYNC) o[k] = JSON.parse(sec(k)); o.lightVer = BOCFG.v.lightVer; return o; };
+  function fnv(str) { let h = 0x811c9dc5; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); } return (h >>> 0).toString(16).padStart(8, '0').slice(0, 6); }
+  const curHash = () => fnv(SYNC.map(sec).join('|'));
+  const CH = 4000;
+  let seq = 0;
+  function sendBig(pl, m) {
+    const s = JSON.stringify(m);
+    const out = (x) => { if (pl) netSendTo(pl, x); else netBroadcast(x); };
+    if (s.length < CH) { out(m); return 1; }
+    const id = Date.now().toString(36) + '.' + (++seq), n = Math.ceil(s.length / CH);
+    for (let i = 0; i < n; i++) out({ t: 'bocfgc', id, i, n, d: s.slice(i * CH, (i + 1) * CH) });
+    return n;
+  }
   let last = {}, timer = 0;
   function flush() {
     timer = 0; if (!hosting()) return null;
     const s = {}; let n = 0;
     for (const k of SYNC) { const j = sec(k); if (j !== last[k]) { s[k] = JSON.parse(j); last[k] = j; n++; } }
     if (!n) return null;
-    const m = { t: 'bocfg', s };
+    const m = { t: 'bocfg', s, h: curHash() };
     A.lastOut = m; A.sent++;
-    if (peers() > 0) { try { netBroadcast(m); } catch (e) { console.warn('BO sync', e); } }
+    if (peers().length) { try { const now = performance.now(); for (const p of peers()) if (!p.boT) p.boT = now; sendBig(null, m); } catch (e) { console.warn('BO sync', e); } }
     return m;
   }
   function dirty() { if (!hosting()) return; clearTimeout(timer); timer = setTimeout(flush, 250); }
@@ -150,14 +167,21 @@
   BOCFG.save = function () { const r = _save.apply(this, arguments); dirty(); return r; };
   BOCFG.saveNow = function () { const r = _saveNow.apply(this, arguments); dirty(); return r; };
   function sendFull(pl) {
+    if (!pl || !pl.conn) return null;
     for (const k of SYNC) last[k] = last[k] || sec(k);
-    const m = { t: 'bocfg', full: 1, v: full() };
-    try { netSendTo(pl, m); } catch (e) {}
+    const m = { t: 'bocfg', full: 1, v: full(), h: curHash() };
+    pl.boT = performance.now(); pl.boTries = (pl.boH === m.h ? pl.boTries || 0 : 0) + 1; pl.boH = m.h;
+    try { m.parts = sendBig(pl, m); } catch (e) { console.warn('BO sync full', e); }
     return m;
   }
   if (typeof netHostMsg === 'function') {
     const _hm = netHostMsg;
     netHostMsg = function (c, m) {
+      if (m && m.t === 'boack' && NET.role === 'host') {
+        const pl = NET.players.get(c.peer);
+        if (pl && pl.conn === c && typeof m.h === 'string') { pl.boAck = m.h.slice(0, 8); pl.boTries = 0; }
+        return;
+      }
       const r = _hm.apply(this, arguments);
       try {
         if (m && m.t === 'hi' && NET.role === 'host') { const pl = NET.players.get(c.peer); if (pl && pl.conn === c) { flush(); sendFull(pl); } }
@@ -165,10 +189,29 @@
       return r;
     };
   }
+  // host: anyone still behind the current config 4 s after a send gets the whole config again (5 tries per version)
+  setInterval(() => {
+    if (!hosting() || !window.BOCFG) return;
+    const h = curHash(), now = performance.now();
+    for (const p of peers()) {
+      if (!p.conn || p.boAck === h) continue;
+      if (p.boH !== h) { if (p.boT && now - p.boT > 4000) sendFull(p); }
+      else if (now - (p.boT || 0) > 4000 && (p.boTries || 0) < 5) sendFull(p);
+    }
+  }, 1000);
   /* guest: apply what the host sends, in memory only (BOCFG.remote: nothing is saved) */
+  let toastEl = null, toastT = 0;
+  function toast(t) {
+    if (!toastEl) {
+      toastEl = document.createElement('div'); toastEl.id = 'boSyncToast';
+      toastEl.style.cssText = 'position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:99999;padding:7px 14px;background:#0b0d10;border:1px solid #3c5d62;color:#e6dfcc;font:700 12px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.14em;pointer-events:none;transition:opacity .4s;opacity:0';
+      document.body.append(toastEl);
+    }
+    toastEl.textContent = t; toastEl.style.opacity = '1'; clearTimeout(toastT); toastT = setTimeout(() => { toastEl.style.opacity = '0'; }, 3500);
+  }
   function clientIn(m) {
     if (!window.BOCFG) return;
-    if (m.full && m.v && typeof m.v === 'object') { BOCFG.replace(m.v, true); A.got++; afterIn(); return; }
+    if (m.full && m.v && typeof m.v === 'object') { BOCFG.replace(m.v, true); A.got++; afterIn(m, true); return; }
     if (!m.s || typeof m.s !== 'object') return;
     const v = JSON.parse(JSON.stringify(BOCFG.v)), ch = [];
     for (const k of SYNC) if (m.s[k] && typeof m.s[k] === 'object') { v[k] = m.s[k]; ch.push(k); }
@@ -176,19 +219,36 @@
     BOCFG.v = BOCFG.sanitize(v); BOCFG.remote = true;
     const done = new Set();
     for (const k of ch) { const s = (k === 'atts' || k === 'loadout') ? 'weapons' : k; if (done.has(s)) continue; done.add(s); try { BOCFG.applySection(s); } catch (e) { console.warn('BO sync apply', k, e); } }
-    A.got++; afterIn();
+    A.got++; afterIn(m, false);
   }
-  function afterIn() { refresh(); try { if (window.BOEDITOR && BOEDITOR.isOpen()) BOEDITOR.render(); } catch (e) {} }
+  function afterIn(m, isFull) {
+    A.hIn = typeof m.h === 'string' ? m.h : '';
+    try { if (A.hIn) netSend({ t: 'boack', h: A.hIn }); } catch (e) {}
+    toast((isFull ? 'HOST SETTINGS APPLIED' : 'HOST SETTINGS UPDATED') + (A.hIn ? ' · #' + A.hIn : ''));
+    console.info('BLACKOUT: host config ' + (isFull ? 'applied' : 'updated') + ' #' + A.hIn);
+    refresh(); try { if (window.BOEDITOR && BOEDITOR.isOpen()) BOEDITOR.render(); } catch (e) {}
+  }
+  const parts = new Map();
+  function partIn(m) {
+    if (typeof m.id !== 'string' || !(m.n > 0 && m.n < 400) || !(m.i >= 0 && m.i < m.n) || typeof m.d !== 'string') return;
+    let P = parts.get(m.id); if (!P) { P = { n: m.n, got: 0, d: [], t: performance.now() }; parts.set(m.id, P); }
+    if (P.d[m.i] == null) { P.d[m.i] = m.d; P.got++; }
+    for (const [k, q] of parts) if (performance.now() - q.t > 30000) parts.delete(k);
+    if (P.got < P.n) return;
+    parts.delete(m.id);
+    let whole = null; try { whole = JSON.parse(P.d.join('')); } catch (e) { console.warn('BO sync: bad chunked config', e); return; }
+    if (whole && whole.t === 'bocfg') clientIn(whole);
+  }
   if (typeof netClientMsg === 'function') {
     const _cm = netClientMsg;
     netClientMsg = function (m) {
-      if (m && m.t === 'bocfg') { if (NET.role === 'client') { try { clientIn(m); } catch (e) { console.warn('BO sync in', e); } } return; }
+      if (m && (m.t === 'bocfg' || m.t === 'bocfgc')) { if (NET.role === 'client') { try { if (m.t === 'bocfg') clientIn(m); else partIn(m); } catch (e) { console.warn('BO sync in', e); } } return; }
       return _cm.apply(this, arguments);
     };
   }
   /* leaving the room: a guest gets his own saved settings back; a host starts the next room from scratch */
   function restore() {
-    clearTimeout(timer); timer = 0; last = {};
+    clearTimeout(timer); timer = 0; last = {}; parts.clear(); A.hIn = '';
     if (!window.BOCFG || !BOCFG.remote) return;
     BOCFG.remote = false; BOCFG.v = BOCFG.defaults(); BOCFG.load();
     try { BOCFG.applyAll(); } catch (e) {}
@@ -199,11 +259,14 @@
   }
   function liveText() {
     if (!hosting()) return '';
-    const n = peers();
-    return n ? 'LIVE · synced to ' + n + ' player' + (n === 1 ? '' : 's') : 'LIVE · room open, changes sync when players join';
+    const P = peers(), h = curHash();
+    if (!P.length) return 'LIVE #' + h + ' · room open, changes sync when players join';
+    const ok = P.filter((p) => p.boAck === h);
+    const wait = P.filter((p) => p.boAck !== h).map((p) => (p.n || 'player') + (p.boAck ? ' (old)' : ' (waiting)'));
+    return 'LIVE #' + h + ' · ' + ok.length + '/' + P.length + ' players synced' + (wait.length ? ' · ' + wait.join(', ') : '');
   }
 
-  const A = window.BOADMIN = { can, unlocked, open, close, lock, refresh, liveText, sha256, sha256js, flush, sendFull, clientIn, restore, lastOut: null, sent: 0, got: 0, HASH };
+  const A = window.BOADMIN = { can, unlocked, open, close, lock, refresh, liveText, sha256, sha256js, flush, sendFull, sendBig, clientIn, partIn, restore, curHash, hIn: '', lastOut: null, sent: 0, got: 0, HASH };
   setInterval(refresh, 1000);
   if (document.body) refresh(); else addEventListener('DOMContentLoaded', refresh);
 })();

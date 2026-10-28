@@ -80,6 +80,7 @@
     const fuse = type === 'decoy' ? 1.1 : Math.max(0.7, nadeFuse(type) - 0.2);
     if (type === 'smoke') SMOKE.life = SP().smokeLife;
     spawnNade(e, p, v, fuse, type);
+    if (A.netThrow) try { A.netThrow(e, type, p, v, fuse); } catch (err) {}
     throwAnim(e);
     log(e.name + ' throws ' + type);
   }
@@ -90,6 +91,7 @@
     const to = aim.clone().sub(p), dist = Math.max(0.5, to.length()), T = dist / K.speed;
     const v = to.normalize().multiplyScalar(K.speed); v.y += 0.5 * K.g * T;
     spawnThrowKnife(e, p, v);
+    if (A.netThrow) try { A.netThrow(e, 'knife', p, v, 0); } catch (err) {}
     throwAnim(e);
     log(e.name + ' throws knife');
   }
@@ -107,11 +109,12 @@
   const _applyDamage = applyDamage;
   applyDamage = function (victim, dmg, attacker, weapon, head, dir, srcPos, life) {
     if (on() && victim && victim.alive) {
-      if (attacker && attacker.team === SPY && weapon === NET_WSPECIAL.tknife) dmg = SP().knifeDmg * (head ? 1.5 : 1);
+      const fromNet = typeof NET !== 'undefined' && !!NET.hitQ; // pass 16: a hit from the net was already scaled by the shooter
+      if (!fromNet && attacker && attacker.team === SPY && weapon === NET_WSPECIAL.tknife) dmg = SP().knifeDmg * (head ? 1.5 : 1);
       if (victim.team === SPY && (!attacker || attacker.team !== SPY)) {
         const ifr = GM().rollIFrames != null ? GM().rollIFrames : 0.35;
         if (victim.boRollAt != null && MATCH.time - victim.boRollAt < ifr) { A.iframeHits = (A.iframeHits || 0) + 1; log('i-frame dodge ' + victim.name); return; }
-        dmg *= SP().spyDmg;
+        if (!fromNet) dmg *= SP().spyDmg;
         const st = SP().stagger;
         if (st > 0 && dmg > 0) {
           victim.boStagT = st;
@@ -315,7 +318,8 @@
         const spd = Math.hypot(e.vel.x, e.vel.z);
         e.boLight = lightLevel(e);
         e.boLit = e.boLight >= S.cloakDark || litByTorch(e);
-        e.boCloakOn = !!(S.cloak && e.alive && e.crouch && !e.boClimb && !(e.boRollLeft > 0) && !e.boInteract && spd <= S.cloakSpeed && !e.boLit);
+        if (e.isRemote && e.boCloakNet != null) e.boCloakOn = !!(S.cloak && e.alive && e.boCloakNet); // pass 16: the spy's own machine decides
+        else e.boCloakOn = !!(S.cloak && e.alive && e.crouch && !e.boClimb && !(e.boRollLeft > 0) && !e.boInteract && spd <= S.cloakSpeed && !e.boLit);
       }
       e.boCloak = clamp((e.boCloak || 0) + (e.boCloakOn ? dt / 0.5 : -dt / 0.2), 0, 1);
       // looks: darker for a merc player watching; a little darker for the spy player himself, so he knows
@@ -472,7 +476,7 @@
           const qx = px - dir.x * t, qy = py - dir.y * t, qz = pz - dir.z * t;
           if (qx * qx + qy * qy + qz * qz < 0.3 * 0.3) { hit = L; ht = t; }
         }
-        if (hit) lampBreak(hit);
+        if (hit) { lampBreak(hit); if (A.netLamp) try { A.netLamp(shooter, hit); } catch (err) {} }
       } catch (err) { console.warn('BO lamp hit', err); }
     }
     return _fireRay(shooter, origin, dir, def, muzzle, tracer, dmgMul);
