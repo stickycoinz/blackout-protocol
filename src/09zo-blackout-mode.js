@@ -193,7 +193,7 @@
       if (!e.isPlayer) { try { spawnEntity(e); } catch (err) { console.warn('BO spawn', err); } }
       if (!e.isPlayer && netOn && !netCl && !e.netBot && typeof NET !== 'undefined') { e.netBot = true; e.netId = NET.me + '~b' + e.id; e.netQ = { seq: 0, list: [] }; }
       placeAt(e, e.team, n[e.team]++);
-      e.alive = true; e.health = 100; e.respawnT = Infinity; e.protT = 0; e.boRollT = 0; e.boInteract = false;
+      e.alive = true; e.health = Math.max(1, Math.round(g.health || 100)); e.respawnT = Infinity; e.protT = 0; e.boRollT = 0; e.boInteract = false;
       if (e.team === SPY && e.model && e.model.gun) e.model.gun.visible = false;
     }
     document.querySelectorAll('.score .row').forEach((r, t) => { r.classList.toggle('a', t === myTeam); r.classList.toggle('b', t !== myTeam); });

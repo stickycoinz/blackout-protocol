@@ -42,65 +42,104 @@
     if (window.BOLOADOUT && BOLOADOUT.onRound) try { BOLOADOUT.onRound(); } catch (err) { console.warn('BO loadout screen', err); }
   };
 
-  /* ---------- aiming and throwing ---------- */
-  function camAim(maxD) {
-    const f = camFwd(_a).clone().normalize(), c = camera.position;
-    const w = rayWorld(c.x, c.y, c.z, f.x, f.y, f.z, maxD || 80, 1);
-    const eh = rayEntities(c, f, w ? w.t : maxD || 80, PL.ent);
-    const t = eh ? eh.t : w ? w.t : maxD || 80;
-    return c.clone().addScaledVector(f, t);
+  /* ---------- aiming and throwing ----------
+     The over-the-shoulder camera sits behind the spy and is pulled into walls. A ray from the lens often hits
+     the jamb or the ground between the camera and the chest, and the old throw then fired back along that hit,
+     into the wall, on every machine that replayed the same origin and velocity. Keep the camera look (it is the
+     crosshair) but cast and spawn from the chest, the way a stock grenade leaves the body. */
+  const finite3 = (v) => !!(v && Number.isFinite(v.x) && Number.isFinite(v.y) && Number.isFinite(v.z));
+  function throwLook(e) {
+    let f = _a;
+    try { f = camFwd(_a); } catch (err) { f = _a.set(0, 0, 0); }
+    if (!f || f.lengthSq() < 1e-8) f = _a.set(-Math.sin(e.yaw || 0), 0, -Math.cos(e.yaw || 0));
+    return f.normalize();
   }
-  function handPos(e, dir) {
-    const p = entChest(e, new V()); p.y += 0.25;
-    const h = _b.set(dir.x, 0, dir.z); if (h.lengthSq() < 1e-6) h.set(-Math.sin(e.yaw), 0, -Math.cos(e.yaw)); h.normalize();
-    const w = rayWorld(p.x, p.y, p.z, h.x, 0, h.z, 0.6, 1), k = w ? Math.max(0, w.t - 0.15) : 0.5;
-    p.x += h.x * k; p.z += h.z * k;
-    return p;
+  function throwDir(e, dir) {
+    const d = _b.copy(dir || _a);
+    if (d.lengthSq() < 1e-8) d.set(-Math.sin(e.yaw || 0), 0, -Math.cos(e.yaw || 0));
+    return d.normalize();
+  }
+  /* just in front of the chest; if a wall is closer than ~0.55 m, stop short of it instead of spawning inside */
+  function throwOrigin(e, dir) {
+    const p = entChest(e, new V()); p.y += 0.12;
+    const d = throwDir(e, dir), reach = 0.55;
+    let k = reach;
+    try {
+      const w = rayWorld(p.x, p.y, p.z, d.x, d.y, d.z, reach + 0.05, 1);
+      if (w) k = Math.max(0, Math.min(reach, w.t - 0.12));
+    } catch (err) {}
+    return p.addScaledVector(d, k);
+  }
+  function aimFromChest(e, dir, maxD) {
+    const d = throwDir(e, dir), o = entChest(e, new V());
+    let t = maxD;
+    try {
+      const w = rayWorld(o.x, o.y, o.z, d.x, d.y, d.z, maxD, 1);
+      const eh = rayEntities(o, d, w ? w.t : maxD, e);
+      t = eh ? eh.t : w ? w.t : maxD;
+    } catch (err) {}
+    if (!(t > 0.4)) t = 0.4;
+    return o.addScaledVector(d, t);
   }
   function throwAnim(e) {
     e.boThrowT = 0.4;
     try { if (e.model && e.model._boKay && !e.boClimb) boKayOneShot(e.model, 'Punch_Jab', 0.42, 0.05); } catch (err) {}
     try { sfxMech('throw', 0, entEye(e, new V())); } catch (err) {}
   }
-  /* grenade-type gadget: player throws along his aim, a bot lobs it onto a point */
+  /* grenade-type gadget: player throws along his aim, a bot lobs it onto a point. false: nothing was spawned */
   function throwNadeType(e, type, target) {
     if (!NADE_MAT) nadeWarm();
     let p, v;
     if (target) {
-      p = handPos(e, _c.set(target.x - e.pos.x, 0, target.z - e.pos.z));
+      const dir = throwDir(e, _c.set(target.x - e.pos.x, 0, target.z - e.pos.z));
+      p = throwOrigin(e, dir);
       const dx = target.x - p.x, dz = target.z - p.z, d = Math.max(0.5, Math.hypot(dx, dz));
       const vt = clamp(d * 0.9, 6, 19), tt = d / vt, vy = ((target.y - p.y) + 0.5 * NADE.g * tt * tt) / tt;
       v = new V((dx / d) * vt, clamp(vy, 1.5, 13), (dz / d) * vt);
     } else {
-      const aim = camAim(60), f0 = aim.clone().sub(camera.position).normalize();
-      p = handPos(e, f0);
-      const f = aim.sub(p).normalize();
-      v = f.multiplyScalar(NADE.speed * 0.9); v.y += NADE.up;
+      const f = throwLook(e);
+      p = throwOrigin(e, f);
+      v = f.clone().multiplyScalar(NADE.speed * 0.9); v.y += NADE.up;
     }
+    if (!finite3(p) || !finite3(v)) return false;
     const fuse = type === 'decoy' ? 1.1 : Math.max(0.7, nadeFuse(type) - 0.2);
     if (type === 'smoke') SMOKE.life = SP().smokeLife;
     spawnNade(e, p, v, fuse, type);
     if (A.netThrow) try { A.netThrow(e, type, p, v, fuse); } catch (err) {}
     throwAnim(e);
     log(e.name + ' throws ' + type);
+    return true;
   }
   function throwKnife(e, target) {
     const K = THROW_KNIFE;
-    const aim = target ? target.clone() : camAim(70);
-    const p = handPos(e, _c.set(aim.x - e.pos.x, 0, aim.z - e.pos.z));
-    const to = aim.clone().sub(p), dist = Math.max(0.5, to.length()), T = dist / K.speed;
-    const v = to.normalize().multiplyScalar(K.speed); v.y += 0.5 * K.g * T;
+    let p, v;
+    if (target) {
+      const ty = target.y != null && Number.isFinite(target.y) ? target.y : e.pos.y + 1;
+      const dir = throwDir(e, _c.set(target.x - e.pos.x, ty - (e.pos.y + 1.1), target.z - e.pos.z));
+      p = throwOrigin(e, dir);
+      const to = target.clone().sub(p), dist = Math.max(0.5, to.length()), T = dist / K.speed;
+      v = to.normalize().multiplyScalar(K.speed); v.y += 0.5 * K.g * T;
+    } else {
+      const f = throwLook(e);
+      p = throwOrigin(e, f);
+      const to = aimFromChest(e, f, 70).sub(p), dist = Math.max(0.5, to.length()), T = dist / K.speed;
+      v = to.normalize().multiplyScalar(K.speed); v.y += 0.5 * K.g * T;
+    }
+    if (!finite3(p) || !finite3(v)) return false;
     spawnThrowKnife(e, p, v);
     if (A.netThrow) try { A.netThrow(e, 'knife', p, v, 0); } catch (err) {}
     throwAnim(e);
     log(e.name + ' throws knife');
+    return true;
   }
   function useGadget(e, k) {
     const g = gad(e);
     if (!(g[k] > 0)) { if (e.isPlayer) try { hudMsg('NO ' + ({ smoke: 'SMOKE BOMBS', flash: 'FLASHBANGS', knife: 'KNIVES', decoy: 'DECOYS' })[k] + ' LEFT', 'enemy', 1); } catch (err) {} return false; }
     if ((e.boThrowAt || -9) > MATCH.time - 0.45) return false;
-    e.boThrowAt = MATCH.time; g[k]--;
-    if (k === 'knife') throwKnife(e); else throwNadeType(e, k);
+    let ok = false;
+    try { ok = k === 'knife' ? !!throwKnife(e) : !!throwNadeType(e, k); } catch (err) { ok = false; console.warn('BO throw', err); }
+    if (!ok) return false;
+    g[k]--; e.boThrowAt = MATCH.time;
     return true;
   }
   R.onSpyClick = (e) => { if (!e.boClimb) useGadget(e, 'knife'); };
@@ -491,11 +530,11 @@
     if (threat && td < 18) {
       const eye = entEye(b, new V()), tc = entChest(threat, new V()), clear = lineClear(eye, tc);
       const r = Math.random();
-      if (g.flash > 0 && td > 4 && td < 15 && clear && r < 0.35) { g.flash--; b.yaw = Math.atan2(-(tc.x - b.pos.x), -(tc.z - b.pos.z)); throwNadeType(b, 'flash', new V(tc.x, tc.y - 1, tc.z)); b.boGadAt = MATCH.time + 3.5; return; }
-      if (g.knife > 0 && td < 16 && clear && r < 0.6) { g.knife--; b.yaw = Math.atan2(-(tc.x - b.pos.x), -(tc.z - b.pos.z)); throwKnife(b, tc); b.boGadAt = MATCH.time + 2; return; }
+      if (g.flash > 0 && td > 4 && td < 15 && clear && r < 0.35) { b.yaw = Math.atan2(-(tc.x - b.pos.x), -(tc.z - b.pos.z)); if (throwNadeType(b, 'flash', new V(tc.x, tc.y - 1, tc.z))) { g.flash--; b.boGadAt = MATCH.time + 3.5; } return; }
+      if (g.knife > 0 && td < 16 && clear && r < 0.6) { b.yaw = Math.atan2(-(tc.x - b.pos.x), -(tc.z - b.pos.z)); if (throwKnife(b, tc)) { g.knife--; b.boGadAt = MATCH.time + 2; } return; }
       if (g.smoke > 0 && td < 13 && r < 0.85) {
-        g.smoke--; const dx = threat.pos.x - b.pos.x, dz = threat.pos.z - b.pos.z, l = Math.hypot(dx, dz) || 1;
-        throwNadeType(b, 'smoke', new V(b.pos.x + dx / l * 2.5, b.pos.y, b.pos.z + dz / l * 2.5)); b.boGadAt = MATCH.time + 6; return;
+        const dx = threat.pos.x - b.pos.x, dz = threat.pos.z - b.pos.z, l = Math.hypot(dx, dz) || 1;
+        if (throwNadeType(b, 'smoke', new V(b.pos.x + dx / l * 2.5, b.pos.y, b.pos.z + dz / l * 2.5))) { g.smoke--; b.boGadAt = MATCH.time + 6; } return;
       }
       return;
     }
@@ -506,7 +545,7 @@
         const dx = S.term.x - m.pos.x, dz = S.term.z - m.pos.z, l = Math.hypot(dx, dz) || 1, sgn = Math.random() < 0.5 ? 1 : -1;
         let tx = S.term.x + (-dz / l) * 12 * sgn, tz = S.term.z + (dx / l) * 12 * sgn;
         if (!lineClear(entEye(b, new V()), new V(tx, 1.2, tz))) { tx = S.term.x + (-dz / l) * 7 * sgn; tz = S.term.z + (dx / l) * 7 * sgn; }
-        g.decoy--; throwNadeType(b, 'decoy', new V(tx, 0.2, tz)); b.boGadAt = MATCH.time + 10;
+        if (throwNadeType(b, 'decoy', new V(tx, 0.2, tz))) { g.decoy--; b.boGadAt = MATCH.time + 10; }
       }
     }
   };

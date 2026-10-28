@@ -50,12 +50,17 @@
     b.style.display = final ? 'none' : 'block';
   }
   const hideBanner = () => { const b = document.getElementById('boRound'); if (b) b.style.display = 'none'; };
+  /* game.intermission is 2–30 s (default 6). Guests used to ignore it and count 60. */
+  function pauseSec(raw) {
+    const n = +raw;
+    return Math.max(2, Math.min(30, Number.isFinite(n) ? n : 6));
+  }
   function roundWon(w, kicker, reason) {
     RS.wins[w] = (RS.wins[w] || 0) + 1;
-    const final = RS.wins[w] >= rtw();
-    if (isHost()) { try { netBroadcast({ t: 'bornd', w, k: kicker, r: reason, wins: RS.wins.slice(), n: RS.n, f: final ? 1 : 0 }, true); } catch (err) {} }
+    const final = RS.wins[w] >= rtw(), pause = pauseSec(GM().intermission);
+    if (isHost()) { try { netBroadcast({ t: 'bornd', w, k: kicker, r: reason, wins: RS.wins.slice(), n: RS.n, f: final ? 1 : 0, i: pause }, true); } catch (err) {} }
     if (final) { RS.matchDone = true; return true; }
-    RS.pending = true; RS.nextAt = MATCH.time + Math.max(2, GM().intermission);
+    RS.pending = true; RS.nextAt = MATCH.time + pause;
     banner(w, kicker, reason, false);
     return false;
   }
@@ -276,7 +281,6 @@
       if (RS.pending) {
         const left = RS.nextAt - MATCH.time, n = document.getElementById('boRoundNext');
         if (n) n.textContent = 'NEXT ROUND IN ' + Math.max(0, Math.ceil(left));
-        MATCH.timeLeft = Math.max(0.1, left);
         if (left <= 0 && !isClient() && MATCH.state === 'playing') nextRound();
       }
       if (MATCH.state !== 'playing' && MATCH.state !== 'paused') hideBanner();
@@ -291,7 +295,7 @@
         RS.wins = Array.isArray(m.wins) ? m.wins.slice(0, 2) : RS.wins; RS.n = m.n || RS.n;
         R.roundOver = true; R.winner = m.w; R.kicker = m.k || ''; R.reason = m.r || '';
         if (m.f) { RS.matchDone = true; return; }
-        RS.pending = true; RS.nextAt = MATCH.time + 60; banner(m.w, m.k, m.r, false); return;
+        RS.pending = true; RS.nextAt = MATCH.time + (typeof m.i === 'number' ? pauseSec(m.i) : pauseSec(GM().intermission)); banner(m.w, m.k, m.r, false); return;
       }
       if (m && m.t === 'bonext') { RS.n = (m.n || RS.n + 1) - 1; nextRound(); return; }
       if (m && m.t === 'end') RS.netFinal = true;
