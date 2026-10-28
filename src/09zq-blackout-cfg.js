@@ -57,6 +57,8 @@
       climb: bool(true, 'Wall climb / ledge hang'), climbH: num(3.4, 1, 4.5, 0.1, 'Max climb height (m)'), climbTime: num(0.8, 0.3, 2.5, 0.05, 'Climb-up time (s)'),
       lamps: bool(true, 'Lamps can be shot out'), botGadgets: bool(true, 'Spy bots use gadgets'), loadoutScreen: bool(true, 'Loadout screen before each round'),
       xhair: bool(true, 'Spy crosshair'), xhairSize: num(1, 0.5, 2.5, 0.05, 'Crosshair size (x)'),
+      gunLock: bool(true, 'Spy sidearm locked to M9 + suppressor'), botGun: bool(true, 'Spy bots carry the M9 too'),
+      armorDmg: num(2, 0, 100, 1, 'Merc body armor damage'), headKillM: num(2, 0, 20, 0.5, 'Headshot kill range m'),
       camDown: num(1.25, 0.3, 1.45, 0.05, 'Camera: max look down (rad)'), camUp: num(0.85, 0.2, 1.2, 0.05, 'Camera: max look up (rad)'),
     },
   };
@@ -243,11 +245,14 @@
     PL.ent.arms = makeArms(ids);
     vmEquip(PL.weapons[0].def); VM.action = null; VM.lower = 1; VM.lowerTarget = 0;
   }
+  /* pass 10: the spy sidearm is the suppressed M9 unless the editor unlocks it (Spy kit > gunLock) */
+  const spyGun = () => (BOCFG.v.spy && BOCFG.v.spy.gunLock !== false) ? { id: 'm9', att: ['sil'] } : { id: BOCFG.v.loadout.spy.secondary, att: BOCFG.v.loadout.spy.secondaryAtt || [] };
+  const spyGunDef = () => { const g = spyGun(); return g.id !== 'none' ? gunDef(g.id, g.att) : null; };
   function giveSpyLoadout() {
-    const id = BOCFG.v.loadout.spy.secondary, d = id !== 'none' ? gunDef(id, BOCFG.v.loadout.spy.secondaryAtt || []) : null;
+    const d = spyGunDef();
     if (d) { PL.ent.arms = makeArms([d, d]); }
   }
-  const spyArmed = () => !!(BOCFG.v.loadout.spy.secondary !== 'none' && (hasKey(WEAPONS, BOCFG.v.loadout.spy.secondary) || hasKey(CUSTOM, BOCFG.v.loadout.spy.secondary)));
+  const spyArmed = () => { const g = spyGun(); return !!(g.id !== 'none' && (hasKey(WEAPONS, g.id) || hasKey(CUSTOM, g.id))); };
 
   /* ---------- lighting ---------- */
   const _c = new THREE.Color();
@@ -275,7 +280,7 @@
   const BOCFG = window.BOCFG = {
     SCHEMA, WF, AF, CUSTOM, ORIG, v: defaults(), remote: false,
     defaults, sanitize, readW, vField, idOk, nameOk, applyWeapons, applyAtts, gunDef, gunSoundList, gunModelList, soundKind,
-    giveMercLoadout, giveSpyLoadout, spyArmed,
+    giveMercLoadout, giveSpyLoadout, spyArmed, spyGun, spyGunDef,
     load() { try { const s = localStorage.getItem(KEY); if (s) this.v = sanitize(JSON.parse(s)); } catch (e) { console.warn('BO cfg load', e); this.v = defaults(); } },
     save() { if (this.remote) return; clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(this.v)); } catch (e) {} }, 150); },
     saveNow() { if (this.remote) return; try { localStorage.setItem(KEY, JSON.stringify(this.v)); } catch (e) {} },

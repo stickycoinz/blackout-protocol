@@ -148,7 +148,7 @@ body.bo-load #lockPrompt,body.bo-load #boHud,body.bo-load #cd{display:none!impor
   function css() { if (document.getElementById('boTheme')) return; const s = el('style', { id: 'boTheme' }); s.textContent = CSS; document.head.appendChild(s); }
 
   /* ---------- body classes: theme on in BLACKOUT, spy red or merc blue, role buttons hidden while you play ---------- */
-  let root = null, pre = false, slot = 'primary', applying = false;
+  let root = null, pre = false, slot = 'primary', applying = false, menu = false; // menu: opened from the main menu (CLASSES)
   const isOpen = () => !!(root && root.classList.contains('open'));
   function bodyTick() {
     const b = document.body; if (!b) return;
@@ -171,6 +171,7 @@ body.bo-load #lockPrompt,body.bo-load #boHud,body.bo-load #cd{display:none!impor
   const gunIds = () => Object.keys(WEAPONS).concat(Object.keys(BOCFG.CUSTOM || {}));
   const base = (id) => (BOCFG.CUSTOM && BOCFG.CUSTOM[id]) || WEAPONS[id] || null;
   const CATS = [['ar', 'ASSAULT RIFLES'], ['smg', 'SUBMACHINE GUNS'], ['sniper', 'PRECISION RIFLES'], ['shotgun', 'SHOTGUNS'], ['pistol', 'PISTOLS']];
+  const KK = (id, d) => (window.BOKEYS ? BOKEYS.K(id) : d);
   const GADS = [['smoke', 'SMOKE BOMB', 'G', 'smokeN', 'Grey cloud that blocks sight lines. Break contact, cross open ground.'],
     ['flash', 'FLASHBANG', 'Q', 'flashN', 'Whites out merc players, stuns bots. You are trained for it.'],
     ['knife', 'THROWING KNIFE', 'X / LMB', 'knifeN', 'Silent. Walk over a stuck knife to take it back.'],
@@ -179,6 +180,7 @@ body.bo-load #lockPrompt,body.bo-load #boHud,body.bo-load #cd{display:none!impor
   const role = () => (typeof BO !== 'undefined' && BO.role === 'spy' ? 'spy' : 'merc');
   function slotRef() {
     const l = L();
+    if (role() === 'spy' && SP().gunLock !== false) return { gun: 'm9', att: ['sil'], set: () => {}, none: false, label: 'SIDEARM', locked: true };
     if (role() === 'spy') return { gun: l.spy.secondary, att: l.spy.secondaryAtt, set: (g) => { l.spy.secondary = g; l.spy.secondaryAtt = []; }, none: true, label: 'SIDEARM' };
     if (slot === 'secondary') return { gun: l.merc.secondary, att: l.merc.secondaryAtt, set: (g) => { l.merc.secondary = g; l.merc.secondaryAtt = []; }, none: true, label: 'SECONDARY' };
     return { gun: l.merc.primary, att: l.merc.primaryAtt, set: (g) => { l.merc.primary = g; l.merc.primaryAtt = []; }, none: false, label: 'PRIMARY' };
@@ -199,6 +201,7 @@ body.bo-load #lockPrompt,body.bo-load #boHud,body.bo-load #cd{display:none!impor
     out.push(el('div', { class: 'gname' }, b.name || ref.gun), el('div', { class: 'gdesc' }, (b.type || b.cat || '').toUpperCase() + (b.custom ? ' · CUSTOM' : '')));
     out.push(el('div', { class: 'bars' }, bar('DAMAGE', dmg, 150, String(Math.round(dmg))), bar('FIRE RATE', d.rpm || 0, 1200, Math.round(d.rpm || 0) + ''), bar('RANGE', rng, 100, Math.round(rng) + ' m'),
       bar('MAGAZINE', d.mag || 0, 100, String(d.mag || 0)), bar('MOBILITY', (d.move || 0.8) - 0.6, 0.5, Math.round((d.move || 0.8) * 100) + '%'), bar('ADS', 0.6 - (d.adsTime || 0.3), 0.5, Math.round((d.adsTime || 0.3) * 1000) + ' ms')));
+    if (ref.locked) { out.push(el('h4', null, 'ATTACHMENTS'), el('div', { class: 'att' }, el('small', null, 'MUZZLE'), el('div', { class: 'chips' }, el('button', { type: 'button', class: 'chip on', disabled: true }, 'SUPPRESSOR · FIXED')))); return out; }
     out.push(el('h4', null, 'ATTACHMENTS'));
     const bySlot = {};
     for (const id in ATT) { let ok = false; try { ok = attFits(b, id); } catch (e) {} if (ok) (bySlot[ATT[id].slot] = bySlot[ATT[id].slot] || []).push(id); }
@@ -226,10 +229,18 @@ body.bo-load #lockPrompt,body.bo-load #boHud,body.bo-load #cd{display:none!impor
     grp('OTHER', ids.filter((id) => !seen.has(id) && base(id)));
     return out;
   }
+  function lockedGun() {
+    const S = SP();
+    return [el('h4', null, 'ARMORY · SIDEARM · ISSUED'),
+      el('div', { class: 'grp' }, el('div', { class: 'grid' }, el('button', { type: 'button', class: 'gun on', disabled: true }, 'M9 SD', el('small', null, 'PISTOL · SUPPRESSED')))),
+      el('div', { class: 'note' }, 'Every spy carries the suppressed M9. It is the only gun a spy can take: quiet enough that bots only hear it up close.'),
+      el('div', { class: 'note' }, 'Mercs wear body armor: a round to the body or limbs does ' + S.armorDmg + ' damage. A headshot from ' + S.headKillM + ' m or closer kills outright; farther out it does normal M9 head damage.'),
+      el('div', { class: 'note' }, 'Fire with LMB, aim with RMB. Takedowns stay on ' + KK('hack', 'E') + ' / ' + KK('takedown', 'F') + ', the throwing knife on ' + KK('tknife', 'X') + '. The editor (F10, Spy kit) can unlock other sidearms.')];
+  }
   function gadgets() {
     const G = L().spy.gadgets, S = SP(), box = el('div', { class: 'gad' });
-    for (const [k, n, key, nk, desc] of GADS) box.append(el('button', { type: 'button', class: 'gcard' + (G[k] ? ' on' : ''), onclick: () => { G[k] = !G[k]; BOCFG.save(); render(); } },
-      el('em', null, key), el('b', null, n), (G[k] ? 'EQUIPPED · x' + S[nk] : 'LEFT BEHIND'), el('small', null, desc)));
+    for (const [k, n, key0, nk, desc] of GADS) { const key = window.BOKEYS ? (BOKEYS.K({ smoke: 'smoke', flash: 'flashbang', knife: 'tknife', decoy: 'decoy' }[k]) + (k === 'knife' && !(BOCFG.spyArmed && BOCFG.spyArmed()) ? ' / LMB' : '')) : key0; box.append(el('button', { type: 'button', class: 'gcard' + (G[k] ? ' on' : ''), onclick: () => { G[k] = !G[k]; BOCFG.save(); render(); } },
+      el('em', null, key), el('b', null, n), (G[k] ? 'EQUIPPED · x' + S[nk] : 'LEFT BEHIND'), el('small', null, desc))); }
     return [el('h4', null, 'GADGETS'), box, el('div', { class: 'note' }, 'Charges per life come from the editor (F10, Spy kit). Every gadget is free: take all four.')];
   }
   function render() {
@@ -242,22 +253,23 @@ body.bo-load #lockPrompt,body.bo-load #boHud,body.bo-load #cd{display:none!impor
     root.append(el('header', null,
       el('div', { class: 'brand' }, el('b', null, 'BLACKOUT PROTOCOL'), el('span', null, '// LOADOUT · OPERATION KHAMSIN · CLEARANCE: ALL')),
       el('div', { class: 'roles' }, rb('merc', 'MERC', 'hold the facility'), rb('spy', 'SPY', 'hack and extract')),
-      el('div', { class: 'stat' }, el('b', null, hold ? 'ROUND ON HOLD' : pre ? 'PRE-DEPLOY' : 'ROUND LIVE'), hold ? 'countdown waits for you' : pre ? 'applies now' : 'guns swap now')));
+      menu ? el('div', { class: 'stat' }, el('b', null, 'CLASSES'), 'saved for your next match')
+        : el('div', { class: 'stat' }, el('b', null, hold ? 'ROUND ON HOLD' : pre ? 'PRE-DEPLOY' : 'ROUND LIVE'), hold ? 'countdown waits for you' : pre ? 'applies now' : 'guns swap now')));
     const left = el('div', { class: 'col' }, el('h4', null, spy ? 'SPY KIT' : 'MERC KIT'));
     if (spy) {
-      left.append(slotBtn('sidearm', 'SIDEARM', l.spy.secondary, l.spy.secondaryAtt));
+      left.append(ref.locked ? slotBtn('sidearm', 'SIDEARM · ISSUED', 'm9', ['sil']) : slotBtn('sidearm', 'SIDEARM', l.spy.secondary, l.spy.secondaryAtt));
       const G = l.spy.gadgets, S = SP();
       left.append(el('div', { class: 'slot' }, el('small', null, 'GADGETS'), GADS.filter((g) => G[g[0]]).map((g) => g[1] + ' x' + S[g[3]]).join(' · ') || 'none'));
-      left.append(el('div', { class: 'note' }, 'Roll R (i-frames), climb SPACE at a ledge, crouch in the dark to cloak, shoot lamps out.'));
+      left.append(el('div', { class: 'note' }, 'Roll ' + KK('roll', 'R') + ' (i-frames), climb ' + KK('jump', 'SPACE') + ' at a ledge, crouch in the dark to cloak, shoot lamps out.'));
     } else {
       left.append(slotBtn('primary', 'PRIMARY', l.merc.primary, l.merc.primaryAtt), slotBtn('secondary', 'SECONDARY', l.merc.secondary, l.merc.secondaryAtt));
-      left.append(el('div', { class: 'note' }, 'Flashlight L. Spies cloak in the dark: light them up, and keep the lamps alive.'));
+      left.append(el('div', { class: 'note' }, 'Flashlight ' + KK('flash', 'L') + '. Spies cloak in the dark: light them up, and keep the lamps alive.'));
     }
-    const mid = el('div', { class: 'col' }, ...gunGrid(ref));
+    const mid = el('div', { class: 'col' }, ...(ref.locked ? lockedGun() : gunGrid(ref)));
     const right = el('div', { class: 'col' }, ...detail(ref), ...(spy ? gadgets() : []));
     root.append(el('main', null, left, mid, right));
-    root.append(el('footer', null, el('div', { class: 'hint' }, el('b', null, 'F9'), 'close ', el('b', null, 'ENTER'), 'deploy ', el('b', null, 'F10'), 'editor   · 18 guns, every attachment, no unlocks'),
-      el('button', { type: 'button', class: 'deploy', onclick: () => deploy() }, pre ? 'DEPLOY' : 'EQUIP')));
+    root.append(el('footer', null, el('div', { class: 'hint' }, el('b', null, 'F9'), 'close ', el('b', null, 'ENTER'), menu ? 'save ' : 'deploy ', el('b', null, menu ? 'ESC' : 'F10'), menu ? 'back   · 18 guns, every attachment, no unlocks' : 'editor   · 18 guns, every attachment, no unlocks'),
+      el('button', { type: 'button', class: 'deploy', onclick: () => deploy() }, menu ? 'SAVE' : pre ? 'DEPLOY' : 'EQUIP')));
   }
   function setRole(r) {
     if (role() === r) return;
@@ -266,8 +278,9 @@ body.bo-load #lockPrompt,body.bo-load #boHud,body.bo-load #cd{display:none!impor
     if (BO.refreshRoleUI) try { BO.refreshRoleUI(); } catch (e) {}
     slot = 'primary'; render();
   }
+  function openMenu() { menu = true; open(false); }
   function open(preSpawn) {
-    if (!bo()) return;
+    if (!bo() && !menu) return;
     css();
     if (!root) { root = el('div', { id: 'boLoad' }); for (const t of ['mousedown', 'mouseup', 'click', 'wheel', 'contextmenu']) root.addEventListener(t, (e) => e.stopPropagation()); document.body.appendChild(root); }
     pre = !!preSpawn;
@@ -276,13 +289,14 @@ body.bo-load #lockPrompt,body.bo-load #boHud,body.bo-load #cd{display:none!impor
     try { showLockPrompt(false); } catch (e) {}
     render(); bodyTick();
   }
-  function close() { if (!root) return; root.className = ''; pre = false; bodyTick(); }
+  function close() { if (!root) return; root.className = ''; pre = false; const wasMenu = menu; menu = false; bodyTick(); if (wasMenu) { try { sfxUi('back'); } catch (e) {} } }
   /* pass 9: the mouse is free the moment the screen opens (no Esc, no pause menu), and captured again on DEPLOY */
   function freeMouse() {
     try { if (document.pointerLockElement) { LOCK.resumeT = performance.now(); LOCK.scriptExit = true; document.exitPointerLock(); } } catch (e) {}
   }
   function deploy() {
     BOCFG.saveNow();
+    if (menu) { close(); try { if (typeof toast === 'function') toast('Loadout saved'); } catch (e) {} return; }
     if (MATCH.state === 'paused' && bo()) { try { $('pause').classList.remove('show'); MATCH.state = 'playing'; LOCK.resumeT = performance.now(); } catch (e) {} }
     const live = MATCH.state === 'playing' && bo();
     const now = live && (pre || (typeof cdOn === 'function' && cdOn()));
@@ -304,7 +318,7 @@ body.bo-load #lockPrompt,body.bo-load #boHud,body.bo-load #cd{display:none!impor
     return _cdTick.apply(this, arguments);
   };
   addEventListener('keydown', (e) => {
-    if (!bo()) return;
+    if (!bo() && !(menu && isOpen())) return;
     if (e.code === 'F9') { e.preventDefault(); e.stopPropagation(); if (e.repeat) return; if (isOpen()) { if (pre) deploy(); else close(); } else if (MATCH.state === 'playing') open(false); return; }
     if (!isOpen()) return;
     if (e.code === 'F10') return;
@@ -313,7 +327,7 @@ body.bo-load #lockPrompt,body.bo-load #boHud,body.bo-load #cd{display:none!impor
     if (e.code === 'Enter' || e.code === 'NumpadEnter') deploy();
     else if (e.code === 'Escape') { if (pre) deploy(); else close(); }
   }, true);
-  addEventListener('keyup', (e) => { if (isOpen() && bo()) e.stopPropagation(); }, true);
+  addEventListener('keyup', (e) => { if (isOpen() && (bo() || menu)) e.stopPropagation(); }, true);
   /* while the screen is open: no pause on the lost capture, no capture request from the game, a capture that lands anyway is given back */
   if (typeof pauseGame === 'function') { const _pg = pauseGame; pauseGame = function () { if (isOpen() && bo()) return; return _pg.apply(this, arguments); }; }
   if (typeof requestLock === 'function') { const _rl = requestLock; requestLock = function () { if (isOpen() && bo()) return; return _rl.apply(this, arguments); }; }
@@ -367,7 +381,7 @@ body.bo-load #lockPrompt,body.bo-load #boHud,body.bo-load #cd{display:none!impor
   requestAnimationFrame(xhTick);
 
   window.BOLOADOUT = {
-    open, close, isOpen, deploy, render,
+    open, openMenu, close, isOpen, deploy, render, isMenu: () => menu,
     onRound() { if (applying) return; if (MATCH.online || !SP().loadoutScreen) return; open(true); },
   };
 })();

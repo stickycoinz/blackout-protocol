@@ -311,6 +311,7 @@
   addEventListener('mousedown', (e) => {
     if (e.button === 0 && boOn() && spyRole() && MATCH.state === 'playing' && pointerActive()) R.clickT = performance.now();
   }, true);
+  const BK = (id) => (window.BOKEYS ? BOKEYS.K(id) : ({ hack: 'E', takedown: 'F' })[id] || id);
   const pressed = R.pressed = (c) => { const now = !!KEYS[c], was = !!R.prevKeys[c]; return now && !was; };
 
   function playerSpyTick(dt) {
@@ -333,19 +334,19 @@
     if (inX) {
       if (holdE) { R.extractProg = Math.min(1, R.extractProg + dt / Math.max(0.2, g.extractTime)); e.boInteract = true; }
       else R.extractProg = Math.max(0, R.extractProg - dt);
-      prompt = holdE ? 'EXTRACTING… ' + Math.floor(R.extractProg * 100) + '%' : 'HOLD E: EXTRACT'; prog = R.extractProg;
+      prompt = holdE ? 'EXTRACTING… ' + Math.floor(R.extractProg * 100) + '%' : 'HOLD ' + BK('hack') + ': EXTRACT'; prog = R.extractProg;
       if (R.extractProg >= 1) { log('EXTRACT player'); endRound(SPY, 'SPIES EXTRACTED', e.name + ' extracted with the data'); }
     } else {
       R.extractProg = Math.max(0, R.extractProg - dt);
       if (td && (pressed('KeyE') || pressed('KeyF') || clicked)) { doTakedown(e, td); R.clickT = 0; }
-      else if (td) prompt = 'E / F / CLICK: TAKEDOWN ' + td.name;
+      else if (td) prompt = BK('hack') + ' / ' + BK('takedown') + ' / CLICK: TAKEDOWN ' + td.name;
       else if (term) {
         if (holdE) {
           e.boInteract = true; term.by = e;
           term.prog = Math.min(1, term.prog + dt / Math.max(0.3, g.hackTime));
           prompt = 'HACKING TERMINAL ' + term.id + '… ' + Math.floor(term.prog * 100) + '%';
           if (term.prog >= 1 && !term.hacked) finishHack(term, e);
-        } else prompt = 'HOLD E: HACK TERMINAL ' + term.id;
+        } else prompt = 'HOLD ' + BK('hack') + ': HACK TERMINAL ' + term.id;
         prog = term.prog;
       }
     }
@@ -417,6 +418,22 @@
       if (R.botAbil) { try { R.botAbil(b, S, threat, td, dt); } catch (err) { console.warn('BO bot gadget', err); } }
     }
     if (S.evadeT > 0) S.evadeT -= dt;
+    // pass 10: a spy bot carrying the M9 shoots back at a merc who has it in sight (aims for the head, the body armor eats body hits)
+    let fight = null;
+    const armed = !!(b.boM9 && b.arms && window.BOCFG && BOCFG.v.spy.botGun !== false && !b.boRoll);
+    if (armed && threat && td < 16) {
+      const eye = entEye(b, new THREE.Vector3()), hd = entHead(threat, new THREE.Vector3());
+      if (lineClear(eye, hd)) fight = { m: threat, eye, hd };
+    }
+    if (fight) {
+      S.fightT = (S.fightT || 0) + dt;
+      const dx = fight.hd.x - fight.eye.x, dy = fight.hd.y - fight.eye.y, dz = fight.hd.z - fight.eye.z, hl = Math.hypot(dx, dz) || 1;
+      if (!S.aimErr || (S.aimErrT = (S.aimErrT || 0) - dt) <= 0) { S.aimErrT = 0.5; S.aimErr = [rand(-1, 1) * 0.05, rand(-1, 1) * 0.05]; }
+      S.fYaw = Math.atan2(-dx, -dz) + S.aimErr[0]; S.fPitch = Math.atan2(dy, hl) + S.aimErr[1];
+      S.shotT = (S.shotT || 0) - dt;
+      if (S.fightT > 0.35 && S.shotT <= 0 && Math.abs(angDiff(b.yaw, S.fYaw)) < 0.12) { I.firePressed = true; I.fire = true; S.shotT = rand(0.32, 0.6); }
+      if (b.arms) { const w = b.arms.slots[b.arms.cur]; if (w && w.mag <= 0 && !b.arms.reload) I.reload = true; }
+    } else S.fightT = 0;
     if (S.mode === 'stalk' && S.tgt && S.tgt.alive) {
       const m = S.tgt, d = hyp2(m.pos.x, m.pos.z, b.pos.x, b.pos.z);
       if (d <= g.takedownRange && takedownTarget(b) === m) { doTakedown(b, m); S.mode = 'hack'; S.tgt = null; S.decideT = 0.5; }
@@ -452,16 +469,19 @@
     }
     // face the move (or the terminal); turn rate like a player
     let want = b.yaw;
-    if (faceX !== null) want = Math.atan2(-faceX, -faceZ);
+    if (fight) { sprint = false; want = S.fYaw; }
+    else if (faceX !== null) want = Math.atan2(-faceX, -faceZ);
     else if (Math.hypot(wishX, wishZ) > 0.1) want = Math.atan2(-wishX, -wishZ);
-    b.yaw += angDiff(b.yaw, want) * Math.min(1, dt * 9); b.lookYaw = b.yaw; b.pitch = 0;
+    b.yaw += angDiff(b.yaw, want) * Math.min(1, dt * (fight ? 14 : 9)); b.lookYaw = b.yaw; b.pitch = fight ? S.fPitch : 0;
     const fx = -Math.sin(b.yaw), fz = -Math.cos(b.yaw), rx = Math.cos(b.yaw), rz = -Math.sin(b.yaw);
     let lx = wishX * rx + wishZ * rz, lz = wishX * fx + wishZ * fz;
     const ll = Math.hypot(lx, lz); if (ll > 1) { lx /= ll; lz /= ll; }
     if (b.boInteract) { lx = 0; lz = 0; sprint = false; crouch = false; }
     I.mx = lx; I.mz = lz; I.sprint = sprint && !crouch; I.crouch = crouch; b.wantCrouch = crouch;
+    if (fight) { b.boInteract = false; I.sprint = false; }
     const px0 = b.pos.x, pz0 = b.pos.z;
     ctlMove(b, dt);
+    if (armed && b.arms) { try { ctlWeapon(b, dt, now); } catch (err) { console.warn('BO spy M9', err); } }
     try { botBump(b, dt, px0, pz0, now); } catch (err) {}
     // stuck: re-path, then try another terminal
     S.stuckT += dt;

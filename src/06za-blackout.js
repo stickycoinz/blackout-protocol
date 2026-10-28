@@ -899,7 +899,7 @@ if (typeof knifePick === 'function') {
 
 /* F/L: merc flashlight. R: spy roll. */
 addEventListener('keydown', (e) => {
-  if (e.code === 'KeyL' || (e.code === 'KeyF' && e.shiftKey)) {
+  if (e.code === (window.BOKEYS ? BOKEYS.code('flash') : 'KeyL') && !e.repeat && boIsBlackout() && MATCH.state === 'playing' && !(typeof CHAT !== 'undefined' && CHAT.open) && !(window.BOLOADOUT && BOLOADOUT.isOpen())) {
     if (!boIsSpy()) BO.flashOn = !BO.flashOn;
   }
   // spy roll (R) is handled by the BLACKOUT rules (09zo), from the game's own key state
@@ -1054,7 +1054,7 @@ BO.boEnsurePlayerKaykit = boEnsurePlayerKaykit;
   const _cs = ctlShoot;
   ctlShoot = function (ent, now) {
     // spy bots never fire; the player spy only with a sidearm given in the editor (BOCFG spy loadout)
-    if (ent && ent.team === 1 && boIsBlackout() && !(ent.isPlayer && window.BOCFG && BOCFG.spyArmed && BOCFG.spyArmed())) return;
+    if (ent && ent.team === 1 && boIsBlackout() && !(ent.isPlayer && window.BOCFG && BOCFG.spyArmed && BOCFG.spyArmed()) && !(!ent.isPlayer && ent.boM9 && ent.arms && window.BOCFG && BOCFG.v.spy.botGun !== false)) return; // pass 10: spy bots with the M9 fire
     return _cs.apply(this, arguments);
   };
   ctlShoot._bo = true;

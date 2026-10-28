@@ -518,11 +518,12 @@
     if (pk('KeyV')) useGadget(e, 'decoy');
   }
   R.spyPrompt = (e) => {
-    if (e.boClimb) return e.boClimb.st === 'up' ? 'CLIMBING' : 'HANGING · SPACE: CLIMB UP · C / S: DROP';
-    if (e.onGround && SP().climb) { const L = ledgeProbe(e); if (L) return 'SPACE: ' + (L.h > 1.9 ? 'GRAB LEDGE' : 'VAULT') + ' (' + L.h.toFixed(1) + ' m)'; }
+    if (e.boClimb) return e.boClimb.st === 'up' ? 'CLIMBING' : 'HANGING · ' + BK('jump') + ': CLIMB UP · ' + BK('crouchT') + ' / ' + BK('back') + ': DROP';
+    if (e.onGround && SP().climb) { const L = ledgeProbe(e); if (L) return BK('jump') + ': ' + (L.h > 1.9 ? 'GRAB LEDGE' : 'VAULT') + ' (' + L.h.toFixed(1) + ' m)'; }
     return '';
   };
   const kb = (k) => '<b>' + k + '</b>';
+  const BK = (id) => (window.BOKEYS ? BOKEYS.K(id) : ({ jump: 'SPACE', crouchT: 'C', back: 'S' })[id] || id);
   R.keysHtml = (spy, me) => {
     if (!spy) return kb('LMB') + 'fire &nbsp;' + kb('RMB') + 'aim &nbsp;' + kb('R') + 'reload &nbsp;' + kb('1') + kb('2') + 'weapons &nbsp;' + kb('L') + 'flashlight<br>'
       + kb('SHIFT') + 'sprint &nbsp;' + kb('C') + 'crouch &nbsp;' + kb('SPACE') + 'jump &nbsp;' + kb('TAB') + 'scores &nbsp;' + kb('F9') + 'loadout &nbsp;' + kb('F10') + 'editor &nbsp;<i>shoot lamps out to kill the light</i>';
