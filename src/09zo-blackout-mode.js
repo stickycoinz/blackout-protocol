@@ -359,8 +359,12 @@
       if (R.extractProg >= 1) { log('EXTRACT player'); endRound(SPY, 'SPIES EXTRACTED', e.name + ' extracted with the data'); }
     } else {
       R.extractProg = Math.max(0, R.extractProg - dt);
-      if (td && (pressed('KeyE') || pressed('KeyF') || clicked)) { doTakedown(e, td); R.clickT = 0; }
-      else if (td) prompt = BK('hack') + ' / ' + BK('takedown') + (window.BOCFG && BOCFG.spyArmed && BOCFG.spyArmed() ? '' : ' / CLICK') + ': TAKEDOWN ' + td.name;
+      // pass 23: looking at a trap within reach, the hack key disarms it (09zzg) and only the takedown key or a click takes down
+      const dis = !!(td && R.disarmFocus && R.disarmFocus(e));
+      if (td && (pressed('KeyF') || clicked || (!dis && pressed('KeyE')))) { doTakedown(e, td); R.clickT = 0; }
+      else if (td && !dis) prompt = BK('hack') + ' / ' + BK('takedown') + (window.BOCFG && BOCFG.spyArmed && BOCFG.spyArmed() ? '' : ' / CLICK') + ': TAKEDOWN ' + td.name;
+      else if (dis) prompt = '';
+      else if (term && term.locked) { prompt = 'TERMINAL ' + term.id + ' LOCKED · FIND THE KEYCARD'; prog = -1; }
       else if (term) {
         if (holdE) {
           e.boInteract = true; term.by = e;
@@ -431,12 +435,14 @@
           for (const t of R.terminals) {
             if (t.hacked) continue;
             const claimed = entities.some((o) => o !== b && o.alive && o.team === SPY && o.bo && o.bo.term === t);
-            const d = hyp2(t.x, t.z, b.pos.x, b.pos.z) + (claimed ? 40 : 0);
+            const d = hyp2(t.x, t.z, b.pos.x, b.pos.z) + (claimed ? 40 : 0) + (t.locked ? 400 : 0); // pass 23: a locked terminal last
             if (d < bd) { bd = d; bt = t; }
           }
           S.term = bt;
         }
         S.goal = S.term ? new THREE.Vector3(S.term.x, 0, S.term.z) : null;
+        // pass 23: the terminal is locked: fetch the keycard first (09zzh)
+        if (S.term && S.term.locked) { const k = R.keycardPos ? R.keycardPos() : null; if (k) S.goal = new THREE.Vector3(k.x, k.y || 0, k.z); }
       }
       if (R.botAbil) { try { R.botAbil(b, S, threat, td, dt); } catch (err) { console.warn('BO bot gadget', err); } }
     }
@@ -473,7 +479,7 @@
       b.repathT = (b.repathT || 0) - dt;
       if (key !== S.goalKey || b.repathT <= 0) { setPath(b, S.goal); S.goalKey = key; b.repathT = S.mode === 'stalk' ? 0.6 : 2.5; }
       const dd = hyp2(S.goal.x, S.goal.z, b.pos.x, b.pos.z);
-      if (S.mode === 'hack' && S.term && dd < 0.6) {
+      if (S.mode === 'hack' && S.term && dd < 0.6 && !S.term.locked) {
         // at the terminal: kneel and hack, facing the pedestal
         b.boInteract = true; faceX = S.term.px - b.pos.x; faceZ = S.term.pz - b.pos.z;
         S.term.by = b;
@@ -605,7 +611,7 @@
     // world markers: terminals (both roles), extract ring once open
     for (const t of R.terminals) {
       const d = me ? Math.round(hyp2(me.pos.x, me.pos.z, t.px, t.pz)) : 0;
-      marker('t' + t.id, t.hacked ? 'h' : 't', 'TERMINAL ' + t.id, t.hacked ? 'HACKED' : (t.prog > 0.01 ? Math.round(t.prog * 100) + '% · ' : '') + d + ' m', t.px, 1.9, t.pz);
+      marker('t' + t.id, t.hacked ? 'h' : t.locked ? 't lk' : 't', 'TERMINAL ' + t.id, t.hacked ? 'HACKED' : (t.locked ? 'LOCKED · ' : '') + (t.prog > 0.01 ? Math.round(t.prog * 100) + '% · ' : '') + d + ' m', t.px, 1.9, t.pz);
     }
     const X = extractPt();
     if (extractOpen()) marker('x', 'x', 'EXTRACT', (me ? Math.round(hyp2(me.pos.x, me.pos.z, X.x, X.z)) : 0) + ' m', X.x, 2.2, X.z);

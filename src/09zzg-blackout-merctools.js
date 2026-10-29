@@ -138,6 +138,7 @@
   function trapTick() {
     for (const d of M.dev.slice()) {
       if (MATCH.time - d.at < 0.8) continue; // arming
+      if (R.trapDead && R.trapDead(d)) continue; // pass 23: no power in a blacked-out zone (09zzh)
       const h = d.y + devHeight(d);
       for (const s of entities) {
         if (!alive(s) || s.team !== SPY) continue;
@@ -418,6 +419,14 @@
       try { hudMsg(name + ' DISARMED', 'xp', 1.5); } catch (e) {}
     }
   }
+  /* pass 23: the spy looks at a trap within reach: the hack key disarms it rather than taking down a merc next to it (09zo) */
+  R.disarmFocus = function (e) {
+    if (!alive(e) || e.team !== SPY || e !== PL.ent) return false;
+    const d = nearDev(e, 1.4); if (!d || (R.terminalNear && R.terminalNear(e))) return false;
+    const p = devPt(d), dx = p.x - e.pos.x, dz = p.z - e.pos.z, L = Math.hypot(dx, dz);
+    if (L < 0.5) return true;
+    return (-Math.sin(PL.yaw) * dx - Math.cos(PL.yaw) * dz) / L > 0.7;
+  };
   const _sp = R.spyPrompt;
   R.spyPrompt = function (e) { const a = _sp ? _sp(e) : ''; if (a) return a; return M.disPrompt || ''; };
 

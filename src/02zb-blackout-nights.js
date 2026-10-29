@@ -121,6 +121,24 @@ function boPickTerminals(D) {
   out.sort((a, b) => a.x - b.x); // A west, B middle, C east
   return out;
 }
+/* pass 23: up to two more terminals (D, E) so each round can switch on a random subset. Points of interest in the middle half,
+   at least 12 m from every terminal already placed; the first three keep their old spots. */
+function boMoreTerminals(D, have, n) {
+  const B = D.bounds; if (!B) return [];
+  const cz = (B.z0 + B.z1) / 2, hz = (B.z1 - B.z0) / 2, mid = D.dom && D.dom[1] ? D.dom[1] : [(B.x0 + B.x1) / 2, cz];
+  const cands = (D.poi || []).filter((p) => Math.abs(p[2] - cz) <= hz * 0.5).map((p) => [p[0], p[1], p[2], p[4] ? 1 : 0]);
+  for (const d of D.dom || []) cands.push([d[0], 0, d[1], 0]);
+  cands.sort((a, b) => a[3] - b[3] || Math.abs(a[2] - cz) - Math.abs(b[2] - cz));
+  const all = have.slice(), out = [];
+  for (const c of cands) {
+    if (out.length >= n) break;
+    if (all.some((o) => Math.hypot(o.x - c[0], o.z - c[2]) < 12)) continue;
+    const y = c[1] || boNearPoiY(D, c[0], c[2]);
+    const s = boFindSpot(c[0], c[2], y, mid[0], mid[1], 4);
+    if (s && !all.some((o) => Math.hypot(o.x - s.x, o.z - s.z) < 12)) { all.push(s); out.push(s); }
+  }
+  return out;
+}
 function boPickExtract(D) {
   const B = D.bounds, cz = (B.z0 + B.z1) / 2, mid = D.dom && D.dom[1] ? D.dom[1] : [(B.x0 + B.x1) / 2, cz];
   const sp = (D.spawns || []).map(([x, z]) => [x, -z]); // Bravo side: spies
@@ -170,7 +188,8 @@ function boNightMap(base, name, tag) {
     build() {
       B.build.call(this);
       S.terms = boPickTerminals(B).slice(0, 3);
-      const ids = ['A', 'B', 'C'];
+      try { S.terms = S.terms.concat(boMoreTerminals(B, S.terms, 2)); } catch (err) { console.warn('BO more terminals', err); }
+      const ids = ['A', 'B', 'C', 'D', 'E'];
       S.terms.forEach((t, i) => { t.id = ids[i]; boBuildTerminal(t); });
       const e = boPickExtract(B);
       S.ext = e ? { x: e.x, z: e.z, y: e.y, r: 1.6 } : null;

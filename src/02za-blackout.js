@@ -307,8 +307,16 @@ const BO_KH_EXTRACT = { x: 0, z: -36, r: 1.6 }; // HACK SPAWN: north end of Main
 const BO_KH_MERC = [[-6, 48.5], [6, 48.5], [-8.5, 43], [8, 43.5]];
 const BO_KH_SPY = BO_KH_MERC.map(([x, z]) => [x, -z]);
 
+let BO_KH_ALL = BO_KH_TERMS;
 function boKhamsinBuild() {
-  for (const [id, x, z, fx, fz] of BO_KH_TERMS) {
+  // pass 23: two more terminals (D, E) picked like the night maps' (02zb), so each round can switch on a random subset
+  BO_KH_ALL = BO_KH_TERMS.slice();
+  try {
+    const more = boMoreTerminals(MAP_DEFS.sable, BO_KH_TERMS.map(([id, x, z]) => ({ x, z })), 2);
+    more.forEach((t, i) => BO_KH_ALL.push([['D', 'E'][i], t.x, t.z, t.fx, t.fz, t.y]));
+  } catch (e) { console.warn('BO Khamsin more terminals', e); }
+  for (const [id, x, z, fx, fz, ty] of BO_KH_ALL) {
+    if (ty) { boBuildTerminal({ x, z, y: ty, fx, fz }); continue; }
     const rot = Math.atan2(fx, fz);
     // pedestal (solid), a raised back plate with the glowing screen, and a status light on top
     boxC('steel', x, 0, z, 0.7, 1.05, 0.5, { rot, tint: [0.12, 0.14, 0.16] });
@@ -333,7 +341,7 @@ function boKhamsinAfter() {
   SPAWNS[0] = BO_KH_MERC.map((p) => p.slice());
   SPAWNS[1] = BO_KH_SPY.map((p) => p.slice());
   window.BLACKOUT_SPAWNS = { merc: SPAWNS[0].slice(), spy: SPAWNS[1].slice() };
-  window.BO_TERMINALS = BO_KH_TERMS.map(([id, x, z, fx, fz]) => ({ id, x: x + fx * 0.75, z: z + fz * 0.75, px: x, pz: z }));
+  window.BO_TERMINALS = BO_KH_ALL.map(([id, x, z, fx, fz]) => ({ id, x: x + fx * 0.75, z: z + fz * 0.75, px: x, pz: z }));
   window.BO_EXTRACT = Object.assign({}, BO_KH_EXTRACT);
   try { if (typeof boLightsArm === 'function') boLightsArm(true); } catch (e) { console.warn('boLightsArm', e); }
 }
