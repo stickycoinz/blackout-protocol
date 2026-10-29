@@ -1,0 +1,46 @@
+{
+ "id": "/",
+ "name": "BLACKOUT PROTOCOL",
+ "short_name": "BLACKOUT",
+ "description": "Spies vs mercs in the browser: solo against bots or online with friends.",
+ "start_url": "./",
+ "scope": "./",
+ "display": "fullscreen",
+ "display_override": [
+  "fullscreen",
+  "standalone"
+ ],
+ "orientation": "landscape",
+ "categories": [
+  "games"
+ ],
+ "background_color": "#0E110D",
+ "theme_color": "#0E110D",
+ "prefer_related_applications": false,
+ "icons": [
+  {
+   "src": "icons/icon-192.d1b67861.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "icons/icon-512.bbd0e74b.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "icons/maskable-192.8cf14b55.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "maskable"
+  },
+  {
+   "src": "icons/maskable-512.f9a02440.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "maskable"
+  }
+ ]
+}

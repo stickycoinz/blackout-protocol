@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://stickycoinz.github.io/blackout-protocol/sitemap.xml
