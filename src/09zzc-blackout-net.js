@@ -105,7 +105,7 @@
     const who = NET.remotes.get(c.peer) || null;
     for (const x of m.l.slice(0, 8)) {
       if (!Array.isArray(x)) continue;
-      const t = R.terminals.find((q) => q.id === String(x[0]).slice(0, 4)); if (!t || t.hacked) continue;
+      const t = R.terminals.find((q) => q.id === String(x[0]).slice(0, 4)); if (!t || t.hacked || t.locked) continue; // pass 23: a locked terminal needs the keycard
       const p = Math.max(0, Math.min(1, +x[1] || 0));
       if (p > t.prog) t.prog = p;
       if (x[2]) {

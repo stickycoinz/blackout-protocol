@@ -378,8 +378,8 @@
       + '#boHud .bo-mg .s{font-weight:600;font-size:11px;opacity:.75;letter-spacing:.08em}#boHud .bo-mg.ok{border-color:#4fd1b5;background:rgba(10,40,32,.85)}#boHud .bo-mg.miss{border-color:#ff5046;background:rgba(50,8,8,.88)}'
       + '#boHud .bo-mg .t{height:3px;background:rgba(255,255,255,.12);margin-top:6px}#boHud .bo-mg .t i{display:block;height:100%;background:#ffd166}'
       + '#boHud .bo-drain{position:absolute;left:50%;top:92px;transform:translateX(-50%);font-weight:800;font-size:12px;letter-spacing:.14em;padding:4px 12px;white-space:nowrap;display:none;color:#ffd166;background:rgba(40,28,4,.7);border:1px solid rgba(255,209,102,.45)}'
-      + '#boHud .bo-drain.hot{color:#ff6b5a;background:rgba(40,6,6,.75);border-color:rgba(255,90,80,.6);animation:boHa .8s steps(2) infinite}'
-      + '#boHud .bo-halert{top:122px!important}'
+      + '#boHud .bo-drain.hot{margin:0;height:auto;min-width:0;padding:4px 12px;gap:0;color:#ff6b5a;background:rgba(40,6,6,.75);border-color:rgba(255,90,80,.6);animation:boHa .8s steps(2) infinite}'
+      // pass 23: the objective, drain, hack alert and facility banners are stacked under the score panel by 09zzh (no fixed tops)
       + '#boHud .bo-mk.pg{color:#ff9a3c}#boHud .bo-mk.rv{color:#ff3b30;font-size:13px}'
       + '#boHud .bo-bar .cp{position:absolute;top:-3px;bottom:-3px;width:2px;background:#ffd166}#boHud .bo-bar .cp.l{background:#4fd1b5}#boHud .bo-bar{overflow:visible}';
     document.head.appendChild(css);

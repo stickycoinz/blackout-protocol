@@ -30,14 +30,15 @@
     ['flash', 'merc', 'Flashlight', 'KeyL', null, 'KeyL'],
     ['torch', 'spy', 'Pistol light (on / off)', 'KeyL', null, 'KeyL'],
     ['melee', 'merc', 'Knife (melee)', 'KeyF', 'knife'], ['nade', 'merc', 'Grenade (hold to cook)', 'KeyG', 'nade'],
-    ['use', 'merc', 'Pick up a weapon', 'KeyE', 'use'], ['inspect', 'merc', 'Inspect weapon', 'KeyI', 'inspect'],
-    ['hack', 'spy', 'Hack / extract (hold), takedown', 'KeyE', null, 'KeyE'],
+    ['use', 'merc', 'Pick up a weapon, restore a breaker (hold)', 'KeyE', 'use'], ['inspect', 'merc', 'Inspect weapon', 'KeyI', 'inspect'],
+    ['hack', 'spy', 'Hack / extract / cut a breaker (hold), takedown, disarm', 'KeyE', null, 'KeyE'],
     ['takedown', 'spy', 'Takedown', 'KeyF', null, 'KeyF'],
     ['roll', 'spy', 'Roll (i-frames)', 'AltLeft', null, 'AltLeft'],
     ['smoke', 'spy', 'Smoke bomb', 'KeyG', null, 'KeyG'],
     ['flashbang', 'spy', 'Flashbang', 'KeyQ', null, 'KeyQ'],
     ['tknife', 'spy', 'Throwing knife', 'KeyX', null, 'KeyX'],
     ['decoy', 'spy', 'Decoy', 'KeyV', null, 'KeyV'],
+    ['spycam', 'spy', 'Plant a spy camera (on the wall you aim at)', 'KeyT', null, 'BoSpyCam'], // pass 23 (09zzh)
     // pass 22: merc tools (09zzg). Their canonical codes are BLACKOUT's own, so any key or mouse button can drive them
     ['scan', 'merc', 'Motion scanner (hold, or toggle in F10)', 'KeyZ', null, 'BoScan'],
     ['trip', 'merc', 'Place tripwire', 'KeyX', null, 'BoTrip'],

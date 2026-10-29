@@ -370,7 +370,8 @@
     for (const l of LAMPS) {
       if (l.boBroken) continue;
       const c = cl(l); if (c[0] + c[3] < xa - 1 || c[0] - c[3] > xb + 1 || c[2] + c[3] < za - 1 || c[2] - c[3] > zb + 1 || c[1] - c[3] > yb + 1) continue;
-      act.push([c[0], c[1], c[2], l.c[0] * l.p, l.c[1] * l.p, l.c[2] * l.p, c[3], l.down || 0]); Rm = Math.max(Rm, c[3]);
+      const lp = l.p * (l.boDim != null ? l.boDim : 1); if (!(lp > 0)) continue; // pass 23: a blacked-out zone (09zzh) dims its lamps
+      act.push([c[0], c[1], c[2], l.c[0] * lp, l.c[1] * lp, l.c[2] * lp, c[3], l.down || 0]); Rm = Math.max(Rm, c[3]);
     }
     // occlusion for the region the rays can cross
     const ox0 = Math.max(0, Math.floor(xa - Rm) - 2), ox1 = Math.min(nx - 1, Math.ceil(xb + Rm) + 2), oz0 = Math.max(0, Math.floor(za - Rm) - 2), oz1 = Math.min(nz - 1, Math.ceil(zb + Rm) + 2);
