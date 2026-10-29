@@ -36,9 +36,9 @@
 
   /* ---------- sound ---------- */
   const listen = () => (typeof camera !== 'undefined' && camera.position) || (PL.ent && PL.ent.pos);
-  function att(p, mapWide) {
+  function att(p, mapWide, rm = 1) {
     const L = listen(); if (!L) return 0;
-    const d = Math.hypot(p.x - L.x, p.z - L.z), r = range();
+    const d = Math.hypot(p.x - L.x, p.z - L.z), r = range() * rm;
     if (mapWide) return Math.max(0.22, Math.pow(Math.max(0, 1 - d / (r * 3)), 1.2));
     if (d >= r) return 0;
     return Math.pow(1 - d / r, 1.6);
@@ -46,7 +46,9 @@
   const tpos = (t) => new V(t.px, 1.3, t.pz);
   function beep(t, prog) {
     if (typeof AU === 'undefined' || !AU.ready || !AU.ctx) return;
-    const p = tpos(t), k = att(p) * vol(); if (k < 0.004) return;
+    // pass 21: louder and heard further as the hack nears done (game.hackLoud scales it, 0 = flat as before)
+    const ld = Math.max(0, GM().hackLoud != null ? +GM().hackLoud : 1), rm = 1 + 0.6 * ld * prog;
+    const p = tpos(t), k = att(p, false, rm) * vol() * (1 + ld * (prog * 1.2 - 0.4)); if (k < 0.004) return;
     try {
       const o = auOut(p, 0.18, k, 0.001, 8), at = AU.ctx.currentTime + 0.01, f = 880 + 900 * prog;
       tn(o, at, 0.07, f, f, 'square', 0.16);
