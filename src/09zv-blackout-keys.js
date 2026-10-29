@@ -38,6 +38,11 @@
     ['flashbang', 'spy', 'Flashbang', 'KeyQ', null, 'KeyQ'],
     ['tknife', 'spy', 'Throwing knife', 'KeyX', null, 'KeyX'],
     ['decoy', 'spy', 'Decoy', 'KeyV', null, 'KeyV'],
+    // pass 22: merc tools (09zzg). Their canonical codes are BLACKOUT's own, so any key or mouse button can drive them
+    ['scan', 'merc', 'Motion scanner (hold, or toggle in F10)', 'KeyZ', null, 'BoScan'],
+    ['trip', 'merc', 'Place tripwire', 'KeyX', null, 'BoTrip'],
+    ['lmine', 'merc', 'Place laser mine', 'KeyB', null, 'BoMine'],
+    ['flare', 'merc', 'Throw flare', 'KeyV', null, 'BoFlare'],
   ].map(([id, g, label, def, rip, canon, fixed]) => ({ id, g, label, def, rip, canon: rip ? null : canon, fixed: !!fixed }));
   const BY = new Map(ACT.map((a) => [a.id, a]));
   /* pass 20: chat is an ordinary bind (Enter by default). Enter stays reserved for every other action (menus, killstreak map, send). */
