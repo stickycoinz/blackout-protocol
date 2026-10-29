@@ -115,7 +115,7 @@
   /* ---------- round setup ---------- */
   function terminalsFresh() {
     const src = window.BO_TERMINALS || [];
-    R.terminals = src.map((t) => ({ id: t.id, x: t.x, z: t.z, px: t.px != null ? t.px : t.x, pz: t.pz != null ? t.pz : t.z, hacked: false, prog: 0, by: null }));
+    R.terminals = src.map((t) => ({ id: t.id, x: t.x, z: t.z, px: t.px != null ? t.px : t.x, pz: t.pz != null ? t.pz : t.z, hacked: false, prog: 0, lock: 0, by: null }));
   }
   function spawnList(team) {
     const S = window.BLACKOUT_SPAWNS || {};
@@ -364,8 +364,10 @@
       else if (term) {
         if (holdE) {
           e.boInteract = true; term.by = e;
-          term.prog = Math.min(1, term.prog + dt / Math.max(0.3, g.hackTime));
-          prompt = 'HACKING TERMINAL ' + term.id + '… ' + Math.floor(term.prog * 100) + '%';
+          // pass 21: R.hackStep (09zzf) pauses the hack on a move, a shot or a hit, and stops it at each checkpoint for the needle game
+          const st = R.hackStep ? R.hackStep(e, term, dt / Math.max(0.3, g.hackTime)) : null;
+          if (!st) term.prog = Math.min(1, term.prog + dt / Math.max(0.3, g.hackTime));
+          prompt = st && st.prompt ? st.prompt : 'HACKING TERMINAL ' + term.id + '… ' + Math.floor(term.prog * 100) + '%';
           if (term.prog >= 1 && !term.hacked) finishHack(term, e);
         } else prompt = 'HOLD ' + BK('hack') + ': HACK TERMINAL ' + term.id;
         prog = term.prog;
@@ -474,7 +476,9 @@
       if (S.mode === 'hack' && S.term && dd < 0.6) {
         // at the terminal: kneel and hack, facing the pedestal
         b.boInteract = true; faceX = S.term.px - b.pos.x; faceZ = S.term.pz - b.pos.z;
-        S.term.by = b; S.term.prog = Math.min(1, S.term.prog + (MATCH.time - (MATCH.startAt || 0) < g.botDelay ? 0 : g.botHack) * dt / Math.max(0.3, g.hackTime));
+        S.term.by = b;
+        const bk = (MATCH.time - (MATCH.startAt || 0) < g.botDelay ? 0 : g.botHack) * dt / Math.max(0.3, g.hackTime);
+        if (!(R.hackStep && R.hackStep(b, S.term, bk))) S.term.prog = Math.min(1, S.term.prog + bk);
         if (S.term.prog >= 1 && !S.term.hacked) { finishHack(S.term, b); S.term = null; S.decideT = 0; }
       } else if (S.mode === 'extract' && dd < extractPt().r - 0.4) {
         S.xT += dt; b.boInteract = true;
@@ -636,7 +640,9 @@
     if (MATCH.state !== 'playing') { hudTick(); R.prevKeys = Object.assign({}, KEYS); return; }
     if (!(R.netClientOn && R.netClientOn())) { const hn = Math.max(1, Math.min(R.terminals.length || 1, Math.round(G().hacksNeeded))); if (hn !== R.hackNeed) R.hackNeed = hn; }
     // terminals nobody works on cool down slowly
-    for (const t of R.terminals) { if (!t.hacked && !(t.by && t.by.alive && t.by.boInteract)) { t.prog = Math.max(0, t.prog - dt * 0.12); if (t.by && !t.by.boInteract) t.by = null; } }
+    // pass 21: progress is kept (game.hackDecay, 0 by default), never below the checkpoint already locked in
+    const dec = Math.max(0, +G().hackDecay || 0);
+    for (const t of R.terminals) { if (!t.hacked && !(t.by && t.by.alive && t.by.boInteract)) { if (dec > 0) t.prog = Math.max(t.lock || 0, t.prog - dt * dec); if (t.by && !t.by.boInteract) t.by = null; } }
     alarmTick(dt);
     if (PL.ent && PL.ent.team === SPY) { rollTick(PL.ent, dt); playerSpyTick(dt); }
     for (const e of entities) {

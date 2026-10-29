@@ -58,6 +58,15 @@
       aiReact: num(60, 0, 100, 1, 'Custom bots: reaction'), aiAim: num(60, 0, 100, 1, 'Custom bots: aim'),
       aiHear: num(60, 0, 100, 1, 'Custom bots: hearing'), aiAgg: num(60, 0, 100, 1, 'Custom bots: aggression'),
       rollIFrames: num(0.35, 0, 0.6, 0.01, 'Roll i-frames (s, roll lasts 0.6)'), rollCd: num(1.1, 0.6, 6, 0.05, 'Roll cooldown (s)'), rollDist: num(3.1, 1, 8, 0.1, 'Roll distance (m)'),
+      // pass 21: hacking tension (09zzf-blackout-tension.js)
+      hackChecks: num(3, 0, 6, 1, 'Needle checkpoints per terminal (0 = off)'), hackZone: num(0.16, 0.04, 0.5, 0.01, 'Needle: green zone width'),
+      hackNeedle: num(0.85, 0.2, 3, 0.05, 'Needle: sweeps per second'), hackMgTime: num(6, 2, 20, 0.5, 'Needle: time to stop it (s)'),
+      hackMissLoss: num(0.15, 0, 1, 0.01, 'Needle miss: progress lost (never below a locked checkpoint)'), hackRevealT: num(5, 0, 20, 0.5, 'Needle miss: spy exposed (s)'),
+      hackPingT: num(7, 2, 30, 0.5, 'Hacking: area ping every (s)'), hackPingR: num(10, 2, 40, 0.5, 'Hacking: area ping radius (m)'), hackPingLife: num(4, 1, 15, 0.5, 'Hacking: ping stays (s)'),
+      hackMoveTol: num(0.6, 0, 3, 0.05, 'Hack pauses above this speed (m/s)'), hackHitPause: num(1.5, 0, 6, 0.1, 'Hack pause after a hit or a shot (s)'),
+      hackDecay: num(0, 0, 0.5, 0.01, 'Idle terminal progress decay (/s, 0 = kept)'), hackLoud: num(1, 0, 3, 0.05, 'Terminal beeps: louder near the end (x)'),
+      botCrack: num(0.7, 0, 1, 0.05, 'Spy bots: needle success chance'),
+      drainIdle: num(45, 5, 300, 1, 'Timer drains faster after no hack progress for (s)'), drainMul: num(3, 1, 8, 0.1, 'Timer drain speed when idle (x)'),
     },
     spy: { // pass 8: spy kit
       spyDmg: num(0.6, 0.1, 2, 0.05, 'Spy damage taken (x)'), stagger: num(0.35, 0, 1.5, 0.05, 'Hit stagger time (s)'), staggerSlow: num(0.45, 0.1, 1, 0.05, 'Move speed while staggered (x)'),
