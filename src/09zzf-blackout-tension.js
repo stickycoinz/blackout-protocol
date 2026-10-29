@@ -190,6 +190,7 @@
     try { botLookAt(m, g, MATCH.time, 1.5); } catch (e) {}
     try { setPath(m, g); } catch (e) {}
     m.forceDecide = true;
+    if (R.onBotAlert) { try { R.onBotAlert(m, g, force); } catch (e) {} } // pass 22: a merc bot may throw a flare there
   }
   R.sendBot = sendBot;
 

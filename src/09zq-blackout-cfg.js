@@ -67,6 +67,17 @@
       hackDecay: num(0, 0, 0.5, 0.01, 'Idle terminal progress decay (/s, 0 = kept)'), hackLoud: num(1, 0, 3, 0.05, 'Terminal beeps: louder near the end (x)'),
       botCrack: num(0.7, 0, 1, 0.05, 'Spy bots: needle success chance'),
       drainIdle: num(45, 5, 300, 1, 'Timer drains faster after no hack progress for (s)'), drainMul: num(3, 1, 8, 0.1, 'Timer drain speed when idle (x)'),
+      // pass 22: merc tools (09zzg-blackout-merctools.js)
+      scanR: num(18, 4, 50, 0.5, 'Scanner: range (m)'), scanTime: num(8, 1, 60, 0.5, 'Scanner: battery (s of use)'), scanRecharge: num(16, 1, 120, 0.5, 'Scanner: recharge empty to full (s)'),
+      scanPulse: num(1.2, 0.3, 5, 0.1, 'Scanner: pulse every (s)'), scanMinV: num(0.5, 0, 3, 0.05, 'Scanner: a spy faster than this shows (m/s)'),
+      scanCrouch: num(0.3, 0, 1, 0.05, 'Scanner: chance to show a crouch-walking spy'), scanStillT: num(10, 2, 60, 0.5, 'Scanner: a spy still in the dark this long shows faintly (s)'),
+      scanToggle: num(0, 0, 1, 1, 'Scanner key: 0 = hold, 1 = toggle'), scanBlip: num(1.6, 0.3, 6, 0.1, 'Scanner: blip stays (s)'),
+      tripN: num(2, 0, 6, 1, 'Tripwires per merc'), mineN: num(1, 0, 6, 1, 'Laser mines per merc'), tripLen: num(6, 1, 15, 0.5, 'Tripwire: max length (m)'), mineLen: num(10, 2, 25, 0.5, 'Laser mine: beam length (m)'),
+      mineDmg: num(45, 0, 150, 1, 'Laser mine: blast damage'), mineBlastR: num(3.5, 0, 8, 0.1, 'Laser mine: blast radius (m)'), trapRevealT: num(6, 0, 20, 0.5, 'Trap set off: spy exposed (s)'),
+      disarmT: num(2.5, 0.5, 10, 0.1, 'Spy: hold to disarm a trap (s)'),
+      flareN: num(2, 0, 6, 1, 'Flares per merc'), flareT: num(10, 2, 30, 0.5, 'Flare: burns for (s)'), flareR: num(16, 4, 40, 0.5, 'Flare: light radius (m)'),
+      flareI: num(14, 1, 60, 0.5, 'Flare: brightness'), flareRange: num(28, 5, 60, 1, 'Flare: throw range (m)'), botFlare: num(0.5, 0, 1, 0.05, 'Merc bots: flare an alert spot (chance)'),
+      botTraps: num(1, 0, 1, 1, 'Merc bots place traps (1 = yes)'),
     },
     spy: { // pass 8: spy kit
       spyDmg: num(0.6, 0.1, 2, 0.05, 'Spy damage taken (x)'), stagger: num(0.35, 0, 1.5, 0.05, 'Hit stagger time (s)'), staggerSlow: num(0.45, 0.1, 1, 0.05, 'Move speed while staggered (x)'),
