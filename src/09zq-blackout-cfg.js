@@ -57,6 +57,8 @@
       // pass 17: the Custom bot difficulty (0 = Recruit, 100 = Nightmare)
       aiReact: num(60, 0, 100, 1, 'Custom bots: reaction'), aiAim: num(60, 0, 100, 1, 'Custom bots: aim'),
       aiHear: num(60, 0, 100, 1, 'Custom bots: hearing'), aiAgg: num(60, 0, 100, 1, 'Custom bots: aggression'),
+      // pass 24: netcode (09c): remote players are drawn this far in the past, between two received states
+      netBuf: num(100, 0, 300, 5, 'Net: remote player buffer (ms, 0 = off)'), netBufAuto: bool(true, 'Net: grow the buffer with jitter'),
       rollIFrames: num(0.35, 0, 0.6, 0.01, 'Roll i-frames (s, roll lasts 0.6)'), rollCd: num(1.1, 0.6, 6, 0.05, 'Roll cooldown (s)'), rollDist: num(3.1, 1, 8, 0.1, 'Roll distance (m)'),
       // pass 21: hacking tension (09zzf-blackout-tension.js)
       hackChecks: num(3, 0, 6, 1, 'Needle checkpoints per terminal (0 = off)'), hackZone: num(0.16, 0.04, 0.5, 0.01, 'Needle: green zone width'),
@@ -111,6 +113,9 @@
       torchTemp: num(5600, 2000, 10000, 100, 'Pistol light: color temperature (K)'), torchSee: num(1.6, 1, 3, 0.05, 'Pistol light: gives the spy away to bots (x)'),
       torchBoost: bool(true, 'Pistol light: stays bright at low exposure'),
       camDown: num(1.25, 0.3, 1.45, 0.05, 'Camera: max look down (rad)'), camUp: num(0.85, 0.2, 1.2, 0.05, 'Camera: max look up (rad)'),
+      // pass 24: fixed shoulder camera (06za) and the spy's shot spread in third person (09zzi)
+      camSide: num(0.7, 0, 1.2, 0.05, 'Camera: shoulder offset (m, right)'), camDist: num(2.2, 1, 4, 0.05, 'Camera: distance behind (m)'),
+      camReturn: num(6, 1, 30, 0.5, 'Camera: boom return speed after a wall'), otsSpread: num(0.5, 0, 1, 0.05, 'Spy shot spread in third person (x)'),
     },
   };
   /* weapon fields the editor exposes, read from / written to a WEAPONS def */

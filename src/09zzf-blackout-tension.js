@@ -245,7 +245,7 @@
       r: T.reveals.filter((r) => r.until > MATCH.time).map((r) => [nid(r.e), r1(r.until - MATCH.time)]).filter((x) => x[0]),
     };
     const sig = JSON.stringify([m.k, m.m, m.p.map((p) => p[5]), m.r.map((r) => r[0])]);
-    if (sig !== lastSig || now - lastHost > 1000) { lastSig = sig; lastHost = now; bcast(m); }
+    if (sig !== lastSig || now - lastHost > 2000) { lastSig = sig; lastHost = now; bcast(m); } // pass 24: refresh every 2 s (was 1 s)
   }
   function stateIn(m) {
     cnt(T.got, 'bo2s');

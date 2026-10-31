@@ -552,7 +552,8 @@
 #boHud .bo-obj{position:absolute;left:50%;top:64px;transform:translateX(-50%);font-weight:700;font-size:13px;letter-spacing:.12em;text-transform:uppercase;padding:5px 12px;background:rgba(10,14,18,.55);white-space:nowrap}
 #boHud .bo-keys{position:absolute;left:16px;bottom:16px;font-size:12px;letter-spacing:.06em;opacity:.85;padding:6px 10px;background:rgba(10,14,18,.5);line-height:1.6}
 #boHud .bo-keys b{display:inline-block;min-width:18px;padding:0 5px;margin-right:4px;border:1px solid rgba(255,255,255,.35);text-align:center;font-weight:700}
-#boHud .bo-mk{position:absolute;transform:translate(-50%,-100%);font-weight:800;font-size:12px;letter-spacing:.1em;text-align:center;white-space:nowrap;text-shadow:0 1px 3px #000}
+#boHud .bo-mk{position:absolute;inset:auto;right:auto;bottom:auto;width:auto;height:auto;max-width:260px;background:none;display:block;z-index:auto;transform:translate(-50%,-100%);font-weight:800;font-size:12px;letter-spacing:.1em;text-align:center;white-space:nowrap;text-shadow:0 1px 3px #000}
+#boHud .bo-mk::before,#boHud .bo-mk::after{content:none!important;display:none!important}
 #boHud .bo-mk i{display:block;font-style:normal;font-weight:600;font-size:10px;opacity:.85}
 #boHud .bo-mk.t{color:#4fd1b5}#boHud .bo-mk.h{color:#7a8590}#boHud .bo-mk.x{color:#ffd166}#boHud .bo-mk.x.edge{font-size:1.15em;text-shadow:0 0 8px #000,0 0 14px #ffd166}#boHud .bo-mk.p{color:#ff5a5a}
 #boHud .bo-state{position:absolute;right:16px;bottom:16px;font-weight:800;font-size:12px;letter-spacing:.14em;padding:6px 10px;background:rgba(10,14,18,.5)}`;
@@ -581,7 +582,11 @@
     }
     m._x = sx; m._y = sy;
     m.style.left = sx + 'px'; m.style.top = sy + 'px';
-    const html = label + '<i>' + sub + '</i>'; if (m._h !== html) { m.innerHTML = html; m._h = html; }
+    const html = label + '<i>' + sub + '</i>'; if (m._h !== html) { m.innerHTML = html; m._h = html; m._chk = 0; m._big = false; }
+    // pass 24: a marker is a small label; if a stray global rule ever stretches one (the 'kc' killcam bars did), hide it
+    const now = performance.now();
+    if (!m._big && !(m._chk > now)) { m._chk = now + 500; m._big = m.offsetWidth > 320 || m.offsetHeight > 120; if (m._big && !HUD_BO.bigWarn) { HUD_BO.bigWarn = 1; console.warn('BO marker too big, hidden', key, cls, m.offsetWidth, m.offsetHeight); } }
+    if (m._big) m.style.display = 'none';
   }
   function hudTick() {
     const el = hudBuild();
