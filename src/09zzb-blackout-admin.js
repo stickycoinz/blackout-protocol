@@ -73,8 +73,8 @@
   #boAdm .row { display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; }
   #boAdm button { padding: 8px 16px; background: #1b2a2e; color: #e6dfcc; border: 1px solid #3c5d62; cursor: pointer; font: 700 12px ui-monospace, monospace; letter-spacing: .14em; }
   #boAdm button.pri { background: #b3242a; border-color: #b3242a; color: #fff; }
-  #boAdm .msg { min-height: 16px; margin-top: 10px; font-size: 12px; color: #ff6a6a; }
-  #boAdm .msg.ok { color: #7fe0b0; }
+  #boAdm .bo-amsg { min-height: 16px; margin-top: 10px; font-size: 12px; color: #ff6a6a; }
+  #boAdm .bo-amsg.ok { color: #7fe0b0; }
   #boAdm.shake .box { animation: boAdmShake .3s; }
   @keyframes boAdmShake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }`;
   let root = null, inp = null, msg = null;
@@ -85,9 +85,9 @@
     root = document.createElement('div'); root.id = 'boAdm';
     root.innerHTML = '<div class="box"><h3>ADMIN <b>//</b> CODE</h3><p>Enter the admin code to unlock the BLACKOUT editor on this device.</p>'
       + '<input type="password" autocomplete="off" spellcheck="false" placeholder="code">'
-      + '<div class="msg"></div><div class="row"><button type="button" class="cx">CANCEL</button><button type="button" class="pri go">UNLOCK</button></div></div>';
+      + '<div class="bo-amsg"></div><div class="row"><button type="button" class="cx">CANCEL</button><button type="button" class="pri go">UNLOCK</button></div></div>';
     document.body.append(root);
-    inp = root.querySelector('input'); msg = root.querySelector('.msg');
+    inp = root.querySelector('input'); msg = root.querySelector('.bo-amsg');
     root.querySelector('.cx').onclick = () => close();
     root.querySelector('.go').onclick = () => submit();
     root.addEventListener('mousedown', (e) => { e.stopPropagation(); if (e.target === root) close(); });
@@ -100,7 +100,7 @@
   }
   function open() {
     if (!root) build();
-    root.classList.add('open'); inp.value = ''; msg.textContent = ''; msg.className = 'msg';
+    root.classList.add('open'); inp.value = ''; msg.textContent = ''; msg.className = 'bo-amsg';
     try { if (document.pointerLockElement) { LOCK.resumeT = performance.now(); LOCK.scriptExit = true; document.exitPointerLock(); } } catch (e) {}
     try { for (const k in KEYS) KEYS[k] = false; } catch (e) {}
     setTimeout(() => inp.focus(), 30);
@@ -113,7 +113,7 @@
     busy = false;
     if (ok) {
       try { localStorage.setItem(KEY, MARK); } catch (e) {}
-      refresh(); msg.textContent = 'Editor unlocked on this device. Press F10.'; msg.className = 'msg ok';
+      refresh(); msg.textContent = 'Editor unlocked on this device. Press F10.'; msg.className = 'bo-amsg ok';
       setTimeout(() => { close(); if (role() === 'client') return; try { BOEDITOR.open(); } catch (e) {} }, 700);
     } else {
       msg.textContent = 'Wrong code.'; inp.select();
