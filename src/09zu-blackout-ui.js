@@ -71,13 +71,19 @@ body.bo-on .fin-tint{background:radial-gradient(ellipse at center,transparent 30
 #boRole #boEdBtn{color:#e8eef2!important}
 body.bo-hide-role #boRole{display:none!important}
 #boXh{position:fixed;left:50%;top:50%;width:0;height:0;z-index:30;pointer-events:none;display:none;--xs:1;--g:calc(7px*var(--xs));--l:calc(9px*var(--xs))}
+/* pass 25: the crosshair state classes were 'hot' and 'near'; shell.html has a global .hot rule (menu hotspots: margin -22px -22px, flex box, 26 px
+   yellow circles with a pulsing ring on every <i>). Over an enemy the crosshair jumped 22 px up and left of the aim and its arms broke up, so it
+   looked like it slipped off the head and half vanished. The classes are now xh-*, and the box ignores any global rule that could move it */
+#boXh{margin:0!important;padding:0!important;border:0!important;min-width:0!important;min-height:0!important;max-width:none;background:none!important;transform:none!important;translate:none!important;inset:auto;left:50%!important;top:50%!important;animation:none!important;opacity:1}
+#boXh::before,#boXh::after,#boXh i::before,#boXh i::after,#boXh em::before,#boXh em::after{content:none!important;display:none!important}
+#boXh i,#boXh em{margin:0!important;padding:0!important;border:0!important;border-radius:0;flex:none;animation:none!important;font-size:0;line-height:0}#boXh em{border-radius:50%}
 #boXh i{position:absolute;background:#ff2a3d;box-shadow:0 0 4px rgba(255,42,61,.9),0 0 1px #000;transition:transform .12s,background .12s}
 #boXh .t,#boXh .b{width:2px;height:var(--l);left:-1px}#boXh .l,#boXh .r{height:2px;width:var(--l);top:-1px}
 #boXh .t{bottom:var(--g)}#boXh .b{top:var(--g)}#boXh .l{right:var(--g)}#boXh .r{left:var(--g)}
 #boXh em{position:absolute;left:-2px;top:-2px;width:4px;height:4px;border-radius:50%;background:#fff;box-shadow:0 0 5px #ff2a3d}
-#boXh.move .t{transform:translateY(-4px)}#boXh.move .b{transform:translateY(4px)}#boXh.move .l{transform:translateX(-4px)}#boXh.move .r{transform:translateX(4px)}
-#boXh.hot i{background:#fff;box-shadow:0 0 6px #ff2a3d,0 0 12px #ff2a3d}#boXh.hot.near .t{transform:translateY(3px)}#boXh.hot.near .b{transform:translateY(-3px)}#boXh.hot.near .l{transform:translateX(3px)}#boXh.hot.near .r{transform:translateX(-3px)}
-#boXh.hang{opacity:.35}
+#boXh.xh-move .t{transform:translateY(-4px)}#boXh.xh-move .b{transform:translateY(4px)}#boXh.xh-move .l{transform:translateX(-4px)}#boXh.xh-move .r{transform:translateX(4px)}
+#boXh.xh-hot i{background:#fff;box-shadow:0 0 6px #ff2a3d,0 0 12px #ff2a3d}#boXh.xh-hot.xh-near .t{transform:translateY(3px)}#boXh.xh-hot.xh-near .b{transform:translateY(-3px)}#boXh.xh-hot.xh-near .l{transform:translateX(3px)}#boXh.xh-hot.xh-near .r{transform:translateX(-3px)}
+#boXh.xh-hang{opacity:.35}
 body.bo-board #boHud .bo-mks{display:none}
 body.bo-load #lockPrompt,body.bo-load #boHud,body.bo-load #cd{display:none!important}
 #boLoad{position:fixed;inset:0;z-index:100001;display:none;flex-direction:column;color:#dfe7ec;font:500 13px/1.3 var(--bo-mono);user-select:none;
@@ -374,9 +380,17 @@ body.bo-load #lockPrompt,body.bo-load #boHud,body.bo-load #cd{display:none!impor
       const w = rayWorld(c.x, c.y, c.z, f.x, f.y, f.z, 60, 1), h = rayEntities(c, f, w ? w.t : 60, PL.ent);
       if (h && h.ent && h.ent.team === MERC) { hot = true; near = h.t - c.distanceTo(PL.ent.pos) < 22; }
     } catch (e) {}
-    xh.classList.toggle('hot', hot); xh.classList.toggle('near', near);
-    xh.classList.toggle('move', !!(PL.ent.vel && Math.hypot(PL.ent.vel.x, PL.ent.vel.z) > 2.5));
-    xh.classList.toggle('hang', !!PL.ent.boClimb);
+    xh.classList.toggle('xh-hot', hot); xh.classList.toggle('xh-near', near);
+    xh.classList.toggle('xh-move', !!(PL.ent.vel && Math.hypot(PL.ent.vel.x, PL.ent.vel.z) > 2.5));
+    xh.classList.toggle('xh-hang', !!PL.ent.boClimb);
+    // pass 25: guard, the dot must be on the screen centre (where the camera ray and the shot go); checked and logged once if a stray rule ever moves it (BO_XHOFF for tests)
+    try {
+      const d = xh.lastChild.getBoundingClientRect(), ox = d.left + d.width / 2 - innerWidth / 2, oy = d.top + d.height / 2 - innerHeight / 2;
+      xh._off = [ox, oy]; window.BO_XHOFF = xh._off;
+      if (Math.abs(ox) > 1.5 || Math.abs(oy) > 1.5) {
+        if (!xh._warned) { xh._warned = 1; console.warn('BO crosshair off centre', ox, oy, xh.className); }
+      }
+    } catch (e) {}
   }
   requestAnimationFrame(xhTick);
 
