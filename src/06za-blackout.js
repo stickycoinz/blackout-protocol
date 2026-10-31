@@ -19,6 +19,7 @@ const BO = window.BO = {
   camSide: 0.7,
   camHeight: 1.95, // ~head(1.65)+0.3
   camFadeUnder: 0.5,
+  pitchOff: 0.14, // pass 24: the spy view looks this much lower than PL.pitch (09zzi wraps aim assist with it)
   camMinComfort: 1.2,
   _look: new THREE.Vector3(),
   _ideal: new THREE.Vector3(),
@@ -659,14 +660,15 @@ function boApplySpyCamera(dt) {
 
   const dtC = Math.max(0, Math.min(0.05, dt || 0.016));
   const crouch = (e.crouchAmt || 0);
-  const dist = BO.camDist * (crouch > 0.5 ? 0.88 : 1);   // ~2.2 m behind
+  const SPC0 = (window.BOCFG && BOCFG.v && BOCFG.v.spy) || {};
+  const dist = (SPC0.camDist != null ? SPC0.camDist : BO.camDist) * (crouch > 0.5 ? 0.88 : 1);   // ~2.2 m behind
   const side = BO.camSide;                                 // +0.7 m to character's right
   const headH = (e.model && e.model._boKay && e.model._boKay.headH) || 1.65;
   const height = headH + 0.3;                              // 0.3 m above the (animated) head; crouch/kneel lower it
   // pass 9: true orbit pitch (look down far, up a fair way); the camera looks exactly along the aim, so the crosshair is the aim
   const SPC = (window.BOCFG && BOCFG.v && BOCFG.v.spy) || {};
   const pDown = SPC.camDown != null ? SPC.camDown : 1.25, pUp = SPC.camUp != null ? SPC.camUp : 0.85;
-  const vp = Math.max(-pDown, Math.min(pUp, PL.pitch - 0.14));
+  const vp = Math.max(-pDown, Math.min(pUp, PL.pitch - BO.pitchOff));
   const pitch = vp, cp = Math.cos(vp), sp = Math.sin(vp);
   BO._viewPitch = vp;
 
@@ -676,97 +678,42 @@ function boApplySpyCamera(dt) {
   const feetY = Math.max(e.pos.y, 0);
   const px = e.pos.x, pz = e.pos.z;
 
-  // Ideal: behind (-forward) and to the right (+rx*side) → after lookAt, body sits lower-LEFT.
-  // Wall pull-in: 5 probe rays (centre, left/right, up/down) from a shoulder pivot to the ideal spot.
-  // Tried with the full right offset first; in doorways the offset hides the lens behind the jamb,
-  // so smaller / centred offsets are tried and the one with the longest clear boom wins.
-  const chestY = feetY + 1.25;
-  // boom: up and behind when looking down, low behind when looking up (kept above the floor)
-  const camY0 = Math.max(feetY + 0.4, feetY + height - 0.12 - sp * dist);
+  /* pass 24: fixed shoulder (owner: "the spy crosshair jumps off what you aim at, especially enemies"). Before, the boom tried four
+     side offsets (right, half right, centre, left) and picked the longest clear one, then two line of sight fallbacks moved it again,
+     and a close wall nudged it 0.25 m right; every switch slid the camera sideways and the crosshair ray with it. Now the camera
+     always sits on the same shoulder, on the line from a pivot at the right shoulder to the ideal spot: a wall only shortens that
+     line (at once), and the boom grows back smoothly (spy.camReturn) once the wall is gone. Yaw and pitch apply at once, the
+     position follows the body without lag (a lagging lens shifted the ray), only the height is smoothed (steps, crouch). */
+  const sm = Math.max(0, SPC.camSide != null ? SPC.camSide : side);
+  if (BO._camPx == null || Math.hypot(px - BO._camPx, pz - BO._camPz) > 3) { BO._camFy = null; BO._boom = null; } // respawn, teleport
+  BO._camPx = px; BO._camPz = pz;
+  const fy = BO._camFy == null || Math.abs(BO._camFy - feetY) > 1.2 ? feetY : BO._camFy + (feetY - BO._camFy) * (1 - Math.exp(-14 * dtC));
+  BO._camFy = fy;
+  const camY = Math.max(fy + 0.4, fy + height - 0.12 - sp * dist);
   const hd = dist * cp + 0.25 * (1 - cp);
-  const probeOut = new THREE.Vector3();
-  function probeBoom(sd, out) {
-    const ix = px - fx * hd + rx * sd, iz = pz - fz * hd + rz * sd;
-    const pvx = px + rx * Math.min(0.18, Math.max(0, sd) * 0.26), pvy = feetY + 1.45, pvz = pz + rz * Math.min(0.18, Math.max(0, sd) * 0.26);
-    let dx0 = ix - pvx, dy0 = camY0 - pvy, dz0 = iz - pvz;
-    const len = Math.hypot(dx0, dy0, dz0);
-    if (len < 0.05) { out.set(ix, camY0, iz); return len; }
-    dx0 /= len; dy0 /= len; dz0 /= len;
-    let tmin = len;
-    for (const [lo, vo] of [[0, 0], [0.24, 0], [-0.24, 0], [0, 0.2], [0, -0.2]]) {
-      const ox = pvx + rx * lo * 0.5, oy = pvy + vo * 0.5, oz = pvz + rz * lo * 0.5;
-      const ex = ix + rx * lo, ey = camY0 + vo, ez = iz + rz * lo;
-      let dx = ex - ox, dy = ey - oy, dz = ez - oz; const L = Math.hypot(dx, dy, dz); dx /= L; dy /= L; dz /= L;
-      try { const h = rayWorld(ox, oy, oz, dx, dy, dz, L + 0.3); if (h && h.t < L + 0.3) tmin = Math.min(tmin, (h.t - 0.3) * (len / L)); } catch (err) {}
-    }
-    const t = Math.max(0.35, Math.min(len, tmin));
-    out.set(pvx + dx0 * t, pvy + dy0 * t, pvz + dz0 * t);
-    return t;
+  const ix = px - fx * hd + rx * sm, iz = pz - fz * hd + rz * sm;
+  const so = Math.min(0.18, sm * 0.26);
+  let pvx = px + rx * so, pvy = fy + 1.45, pvz = pz + rz * so;
+  // body hugging a wall on the right: keep the pivot on this side of it
+  try { const h = so > 0.01 ? rayWorld(px, pvy, pz, rx, 0, rz, so + 0.12) : null; if (h && h.t < so + 0.12) { const k = Math.max(0, h.t - 0.12); pvx = px + rx * k; pvz = pz + rz * k; } } catch (err) {}
+  let dx0 = ix - pvx, dy0 = camY - pvy, dz0 = iz - pvz;
+  const len = Math.max(0.05, Math.hypot(dx0, dy0, dz0));
+  dx0 /= len; dy0 /= len; dz0 /= len;
+  let tmin = len;
+  // five probes around the line (centre, left / right, up / down) so the lens never clips a corner
+  for (const [lo, vo] of [[0, 0], [0.24, 0], [-0.24, 0], [0, 0.2], [0, -0.2]]) {
+    const ox = pvx + rx * lo * 0.5, oy = pvy + vo * 0.5, oz = pvz + rz * lo * 0.5;
+    const ex = ix + rx * lo, ey = camY + vo, ez = iz + rz * lo;
+    let dx = ex - ox, dy = ey - oy, dz = ez - oz; const L = Math.hypot(dx, dy, dz); if (L < 1e-3) continue; dx /= L; dy /= L; dz /= L;
+    try { const h = rayWorld(ox, oy, oz, dx, dy, dz, L + 0.3); if (h && h.t < L + 0.3) tmin = Math.min(tmin, (h.t - 0.3) * (len / L)); } catch (err) {}
   }
-  {
-    let bestT = -1;
-    for (const sd of [side, side * 0.55, 0, -side * 0.45]) {
-      const t = probeBoom(sd, probeOut);
-      // prefer the shoulder offsets: accept them as soon as the boom is comfortably long
-      const score = t + (sd === side ? 0.35 : sd > 0 ? 0.2 : 0);
-      if (score > bestT) { bestT = score; BO._ideal.copy(probeOut); }
-      if (sd === side && t > dist * 0.8) break;
-    }
-  }
-  // If still blocked (cam inside brush / side offset into wall), collapse side then dist
-  function losClear(camPos) {
-    try {
-      const dx = px - camPos.x, dy = chestY - camPos.y, dz = pz - camPos.z;
-      const L = Math.hypot(dx, dy, dz);
-      if (L < 0.05) return true;
-      const h = rayWorld(camPos.x, camPos.y, camPos.z, dx / L, dy / L, dz / L, L - 0.08);
-      return !(h && h.t < L - 0.12);
-    } catch (err) { return true; }
-  }
-  if (!losClear(BO._ideal)) {
-    // drop side offset
-    BO._ideal.set(px - fx * dist, feetY + height, pz - fz * dist);
-    if (!losClear(BO._ideal)) {
-      // pull closer until LOS or min
-      for (let d = dist; d > 0.55; d -= 0.35) {
-        BO._ideal.set(px - fx * d + rx * side * 0.25, feetY + Math.min(height, 1.45), pz - fz * d + rz * side * 0.25);
-        if (losClear(BO._ideal)) break;
-      }
-    }
-  }
-
-  // Soft keep-out from skull: prefer ≥0.45 m, allow closer (fade) rather than shoving camera out of frame
-  const head = BO._tmp.set(px, feetY + 1.5, pz);
-  const away = BO._look.copy(BO._ideal).sub(head);
-  let dHead = away.length();
-  if (dHead < 0.35) {
-    if (dHead < 1e-4) away.set(-fx, 0.2, -fz);
-    away.normalize();
-    BO._ideal.copy(head).addScaledVector(away, 0.42);
-    dHead = 0.42;
-  }
-
-  // If wall-forced close, lift cam and bias further right so body stays lower-left (not a face-fill)
-  {
-    const dChest = Math.hypot(BO._ideal.x - px, BO._ideal.z - pz);
-    if (dChest < (BO.camMinComfort || 1.35) * Math.max(0.3, cp)) {
-      const ox = BO._ideal.x, oy = BO._ideal.y, oz = BO._ideal.z;
-      BO._ideal.y = Math.max(BO._ideal.y, feetY + Math.min(1.75, headH + 0.25));
-      // nudge further to the right of the body - only if that keeps the lens out of walls and LOS clear
-      let wallR = false;
-      try { const h = rayWorld(ox, oy, oz, rx, 0, rz, 0.55); wallR = !!(h && h.t < 0.55); } catch (err) {}
-      if (!wallR) { BO._ideal.x += rx * 0.25; BO._ideal.z += rz * 0.25; }
-      if (!losClear(BO._ideal)) BO._ideal.set(ox, oy, oz);
-    }
-  }
-
-  if (!Number.isFinite(camera.position.x) || !Number.isFinite(camera.position.z) ||
-      !Number.isFinite(camera.position.y) || camera.position.distanceTo(BO._ideal) > 3.5) {
-    camera.position.copy(BO._ideal);
-  } else {
-    camera.position.lerp(BO._ideal, 1 - Math.exp(-16 * dtC));
-  }
-  if (!Number.isFinite(camera.position.x)) camera.position.copy(BO._ideal);
+  const want = Math.max(0.45, Math.min(len, tmin));
+  const ret = SPC.camReturn != null ? SPC.camReturn : 6;
+  if (BO._boom == null || !Number.isFinite(BO._boom) || want < BO._boom) BO._boom = want; // pull in at once: the lens never goes through the wall
+  else BO._boom += (want - BO._boom) * (1 - Math.exp(-ret * dtC));
+  BO._boom = Math.min(BO._boom, len);
+  BO._ideal.set(pvx + dx0 * BO._boom, pvy + dy0 * BO._boom, pvz + dz0 * BO._boom);
+  camera.position.copy(BO._ideal);
 
   // Look ahead - slight left of true forward so body sits lower-LEFT
   const look = BO._look.set(camera.position.x + fx * cp * 10, camera.position.y + sp * 10, camera.position.z + fz * cp * 10);

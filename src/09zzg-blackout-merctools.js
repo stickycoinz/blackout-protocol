@@ -462,7 +462,7 @@
       n: mercs.map((e) => { const c = charges(e); return [nid(e), c.trip, c.mine, c.flare]; }).filter((x) => x[0]).slice(0, 12),
     };
     const sig = JSON.stringify([m.d.map((x) => x[0]), m.f.map((x) => x[0]), m.s, m.n]);
-    if (sig !== lastSig || now - lastHost > 1500) { lastSig = sig; lastHost = now; bcast(m); }
+    if (sig !== lastSig || now - lastHost > 3000) { lastSig = sig; lastHost = now; bcast(m); } // pass 24: refresh every 3 s (was 1.5 s)
   }
   function stateIn(m) {
     cnt(M.got, 'bo3s');

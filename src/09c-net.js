@@ -14,7 +14,7 @@
    séries). Modèle « le tireur décide » : celui qui tire calcule ses touches
    et les adresse à la victime, qui applique les dégâts et annonce sa mort.
    ========================================================================== */
-const NET_PROTO = 11, NET_LOAD_WAIT = 45, NET_MAX = 8, NET_TEAM = 6, NET_PREFIX = 'cod-lc1-', NET_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const NET_PROTO = 12, NET_LOAD_WAIT = 45, NET_MAX = 8, NET_TEAM = 6, NET_PREFIX = 'cod-lc1-', NET_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const NET_WSPECIAL = { nade: _t('Grenade'), tknife: _t('Couteau de lancer'), air: _t('Frappe aérienne'), knife: _t('Couteau'), heli: _t('Hélicoptère'), drone: _t('Drone kamikaze'), mecha: _t('Mecha'), fall: _t('Chute'), zone: _t('Désert') }; // fall : chute dans le vide (voidDeath) ; zone : resté hors de la zone ronde (zoneDeath, 02-relief.js)
 const NET = {
   role: 'off', peer: null, hostConn: null, me: '', code: '', joined: false, t0: 0, hostSeen: 0, hbT: 0, lastSend: 0,
@@ -25,6 +25,7 @@ const NET = {
   key: '', // clé de cette page, envoyée avec la présentation (voir netKey)
   muted: new Set(), // joueurs masqués par ce joueur (leurs messages ne s'affichent plus chez lui), le temps du salon
   goneK: [0, 0], hostId: '', // éliminations de ceux qui ont quitté la partie, par équipe ; joueur hôte du salon (un autre : la partie a été reprise)
+  slowIn: new Map(), slowOut: new WeakMap(), // passe 24 : derniers champs lents reçus par expéditeur, derniers envoyés par participant local (netSlowIn)
   banned: new Set(), kickAsk: '', // hôte : clés des joueurs exclus (refusés s'ils reviennent), exclusion en attente de confirmation
 };
 
@@ -391,7 +392,7 @@ function netReset(msg) {
   const peer = NET.peer, relay = NET.relay, rc = NET.relayConn;
   clearTimeout(NET.relayTimer); clearTimeout(NET.lobbyTimer); netOldConnClose(); netResumeEnd(); netMigDone(true);
   Object.assign(NET, { role: 'off', peer: null, hostConn: null, relay: null, relayConn: null, relayTimer: 0, tx: { p2p: 'off', relay: 'off' }, me: '', code: '', joined: false, phase: 'lobby', ldKey: '', lobbyTimer: 0, quick: false, quickJoin: false, kickAsk: '', srv: false, hostId: '' });
-  NET.players.clear(); NET.banned.clear();
+  NET.players.clear(); NET.banned.clear(); NET.slowIn.clear(); NET.slowOut = new WeakMap();
   if (!SRV.on) { NET.muted.clear(); chatClear(); $('netLeave').classList.add('hidden'); } // (salon fermé par l'hôte pendant la question)
   if (peer) { try { peer.destroy(); } catch (e) { /* déjà détruit */ } }
   if (relay) relay.close();
@@ -901,6 +902,7 @@ function netRemoteAway(id) {
 }
 function netApply(id, P) {
   if (!NET.on || id === NET.me || !P || typeof P !== 'object' || netLocal(id)) return;
+  P = netSlowIn(id, P); if (!P) return;
   const s = P.s;
   if (!Array.isArray(s) || s.length < 12) { netRemoveById(id); return; }
   let e = NET.remotes.get(id); if (!e) e = netMakeRemote(id, P);
@@ -1035,20 +1037,69 @@ function netTrack(e, ts, alive) {
     t = ts / 1000 + N.off;
   }
   if (H.length && t <= H[H.length - 1].t + 1e-3) return; // le même état relayé deux fois, ou arrivé après un plus récent
+  // passe 24 : régularité des arrivées, pour la mémoire tampon (updateRemote) : retard sur le trajet le plus court (gardé en pic qui retombe
+  // en 3 s environ) et écart moyen entre deux états
+  const late = Math.max(0, now - t);
+  N.lateM = Math.max(late, (N.lateM || 0) * 0.985);
+  if (H.length) { const g = clamp(t - H[H.length - 1].t, 0, 0.5); N.gapM = N.gapM === undefined ? g : N.gapM + (g - N.gapM) * 0.1; }
   H.push({ t, x: N.tgt.x, y: N.tgt.y, z: N.tgt.z, vx: N.tv.x, vz: N.tv.z, yaw: N.yaw, pitch: N.pitch, alive });
   while (H.length > 2 && (H[0].t < now - 14 || H.length > 400)) H.shift();
 }
-/* Un participant distant se déplace entre deux mises à jour : lissage et extrapolation courte */
+/* Mémoire tampon de l'affichage des participants distants (passe 24, retour du propriétaire : « ça saccade ») : chacun est montré un peu
+   dans le passé (netBuf ms, réglage BLACKOUT Gameplay), entre deux états déjà reçus, au lieu de courir après le dernier arrivé. En mode
+   automatique, elle grandit avec l'irrégularité des arrivées (écart entre états plus pic de retard), jusqu'à 250 ms ; elle change lentement. */
+function netBufTarget(N) {
+  const G = (typeof BOCFG !== 'undefined' && BOCFG.v && BOCFG.v.game) || {};
+  const base = (G.netBuf != null ? +G.netBuf : 100) / 1000;
+  if (!(base > 0)) return 0;
+  if (G.netBufAuto === false) return base;
+  return clamp((N.gapM || 0.066) + (N.lateM || 0) + 0.012, base, Math.max(base, 0.25));
+}
+const _nrP = { x: 0, y: 0, z: 0, yaw: 0, pitch: 0 };
+/* Position et regard montrés à l'heure rt : entre les deux états qui l'encadrent ; après le dernier, extrapolation courte (0,15 s) ;
+   null : pas d'historique utilisable (mort, réapparition, saut de plus de 4 m : on suit alors le dernier état, comme avant) */
+function netInterp(N, rt) {
+  const H = N.hist; if (!H || H.length < 2) return null;
+  const L = H[H.length - 1];
+  if (rt >= L.t) {
+    if (!L.alive) return null;
+    const a = Math.min(rt - L.t, 0.15);
+    _nrP.x = L.x + L.vx * a; _nrP.y = L.y; _nrP.z = L.z + L.vz * a; _nrP.yaw = L.yaw; _nrP.pitch = L.pitch; return _nrP;
+  }
+  if (rt <= H[0].t) return null;
+  let lo = 0, hi = H.length - 1;
+  while (hi - lo > 1) { const m = (lo + hi) >> 1; if (H[m].t <= rt) lo = m; else hi = m; }
+  const A = H[lo], B = H[hi], h = B.t - A.t;
+  if (!A.alive || !B.alive || h <= 1e-4 || h > 0.6 || hyp(B.x - A.x, B.z - A.z) > 4) return null;
+  // une marche de plus de 4 m d'un état à l'autre (réapparition) : pas de glissade ; sinon interpolation linéaire, le regard par le plus court
+  const u = (rt - A.t) / h;
+  _nrP.x = A.x + (B.x - A.x) * u; _nrP.y = A.y + (B.y - A.y) * u; _nrP.z = A.z + (B.z - A.z) * u;
+  _nrP.yaw = A.yaw + angDiff(A.yaw, B.yaw) * u; _nrP.pitch = A.pitch + (B.pitch - A.pitch) * u;
+  return _nrP;
+}
+/* Un participant distant se déplace entre deux mises à jour : mémoire tampon (netInterp), sinon lissage et extrapolation courte */
 function updateRemote(e, dt) {
   const N = e.net, age = clamp(MATCH.time - N.at, 0, 0.25);
   if (e.alive) {
-    const tx = N.tgt.x + N.tv.x * age, tz = N.tgt.z + N.tv.z * age;
-    const k = 1 - Math.exp(-14 * dt);
+    const bt = netBufTarget(N);
+    N.buf = N.buf === undefined || bt === 0 ? bt : N.buf + (bt - N.buf) * (1 - Math.exp(-1.5 * dt));
+    const I = N.buf > 0 ? netInterp(N, MATCH.time - N.buf) : null;
     const ox = e.pos.x, oz = e.pos.z;
-    e.pos.x += (tx - e.pos.x) * k; e.pos.z += (tz - e.pos.z) * k; e.pos.y += (N.tgt.y - e.pos.y) * k;
-    if (e.pos.distanceTo(N.tgt) > 6) e.pos.copy(N.tgt);
+    let k;
+    if (I) {
+      k = 1 - Math.exp(-30 * dt); // presque direct : l'interpolation est déjà lisse, ceci n'efface que les reprises
+      e.pos.x += (I.x - e.pos.x) * k; e.pos.z += (I.z - e.pos.z) * k; e.pos.y += (I.y - e.pos.y) * k;
+      if (hyp(e.pos.x - I.x, e.pos.z - I.z) > 6) e.pos.set(I.x, I.y, I.z);
+      e.yaw += angDiff(e.yaw, I.yaw) * k; e.pitch += (I.pitch - e.pitch) * k;
+    } else {
+      const tx = N.tgt.x + N.tv.x * age, tz = N.tgt.z + N.tv.z * age;
+      k = 1 - Math.exp(-14 * dt);
+      e.pos.x += (tx - e.pos.x) * k; e.pos.z += (tz - e.pos.z) * k; e.pos.y += (N.tgt.y - e.pos.y) * k;
+      if (e.pos.distanceTo(N.tgt) > 6) e.pos.copy(N.tgt);
+      e.yaw += angDiff(e.yaw, N.yaw) * k; e.pitch += (N.pitch - e.pitch) * k;
+    }
     e.vel.set((e.pos.x - ox) / Math.max(dt, 1e-3), 0, (e.pos.z - oz) / Math.max(dt, 1e-3));
-    e.yaw += angDiff(e.yaw, N.yaw) * k; e.lookYaw = e.yaw; e.pitch += (N.pitch - e.pitch) * k;
+    e.lookYaw = e.yaw;
     e.crouchAmt = damp(e.crouchAmt, e.crouch ? 1 : 0, 10, dt);
     e.slideAmt = damp(e.slideAmt || 0, e.slide ? 1 : 0, e.slide ? 12 : 7, dt); // comme ctlMove
     e.visible = true; e.target = null;
@@ -1177,7 +1228,20 @@ function netPresence(e, now) {
     for (const h of NET.held) { const id = netIdOf(h.x); if (ak && id in ak) ak[id] = Math.min(ak[id], h.ev.i - 1); }
     if (ak) p.ak = ak;
   }
+  // passe 24 (protocole 12) : les champs lents (nom, armes, tenue, compteurs) ne partent qu'à leur changement et une fois par seconde ;
+  // le reste du temps l'état n'a que la position, le regard et les drapeaux (netSlowIn les recopie à l'arrivée). Liste d'événements vide : omise.
+  const slow = JSON.stringify(NET_SLOW.map((k) => p[k])), c = NET.slowOut.get(e);
+  if (c && c.s === slow && now - c.at < 1000) { for (const k of NET_SLOW) delete p[k]; }
+  else NET.slowOut.set(e, { s: slow, at: now });
+  if (!p.ev.length) delete p.ev;
   return p;
+}
+const NET_SLOW = ['n', 'w', 'g', 'sk', 'k', 'd', 'a', 'sc'];
+/* État reçu sans ses champs lents : ceux du dernier état complet de cet expéditeur ; aucun encore (il vient d'arriver) : null, l'état attend le suivant complet (1 s au plus) */
+function netSlowIn(id, P) {
+  if (P.n !== undefined) { const c = {}; for (const k of NET_SLOW) c[k] = P[k]; NET.slowIn.set(id, c); return P; }
+  const c = NET.slowIn.get(id); if (!c) return null;
+  return Object.assign({}, c, P);
 }
 function netUpdate(dt) {
   if (!NET.on) return;

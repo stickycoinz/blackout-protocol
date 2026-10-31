@@ -501,7 +501,7 @@
       q: entities.filter((e) => !e.off && e.team === SPY).map((e) => [nid(e), scLeft(e)]).filter((x) => x[0]).slice(0, 8),
     };
     const sig = JSON.stringify([m.r, m.a, m.l, m.k, m.i.map((x) => x[0]), m.b.map((x) => x[11]), m.c.map((x) => [x[7], x[8] > 0, x[9]]), m.s.map((x) => x[0]), m.q]);
-    if (sig !== lastSig || now - lastHost > 1000) { lastSig = sig; lastHost = now; bcast(m); }
+    if (sig !== lastSig || now - lastHost > 2500) { lastSig = sig; lastHost = now; bcast(m); } // pass 24: refresh every 2.5 s (was 1 s), changes still go at once
   }
   function stateIn(m) {
     cnt(F.got, 'bo4s');
@@ -793,7 +793,7 @@
       + '#boHud .bo-fp{position:absolute;left:50%;bottom:24%;transform:translateX(-50%);font-weight:700;font-size:15px;letter-spacing:.08em;text-transform:uppercase;padding:8px 16px;background:rgba(10,14,18,.72);border-left:3px solid #ffd166;white-space:nowrap;display:none}'
       + '#boHud .bo-fb{position:absolute;left:50%;bottom:21.5%;transform:translateX(-50%);width:220px;height:6px;background:rgba(255,255,255,.12);display:none}#boHud .bo-fb i{display:block;height:100%;width:0;background:#ffd166}'
       + '#boHud .bo-mk.brk{color:#ffd166;font-size:10px}#boHud .bo-mk.brk.dk{color:#ff6b5a}#boHud .bo-mk.cam{color:#ff6b5a;font-size:10px}#boHud .bo-mk.cam.off{color:#7a8590}'
-      + '#boHud .bo-mk.int{color:#ffd166;font-size:10px}#boHud .bo-mk.kc{color:#5fd8ff}#boHud .bo-mk.sn{color:#ff5a5a}#boHud .bo-mk.scm{color:#3aff7a;font-size:10px}#boHud .bo-mk.t.lk{color:#5fd8ff}';
+      + '#boHud .bo-mk.int{color:#ffd166;font-size:10px}#boHud .bo-mk.kcd{color:#5fd8ff}#boHud .bo-mk.sn{color:#ff5a5a}#boHud .bo-mk.scm{color:#3aff7a;font-size:10px}#boHud .bo-mk.t.lk{color:#5fd8ff}';
     document.head.appendChild(css);
     H = { fac: document.createElement('div'), fp: document.createElement('div'), fb: document.createElement('div') };
     H.fac.className = 'bo-fac'; H.fp.className = 'bo-fp'; H.fb.className = 'bo-fb'; H.fb.innerHTML = '<i></i>';
@@ -848,7 +848,7 @@
       if (spy) {
         for (const c of F.cams) { const d = dist(c.x, c.z); if (d < 28) mk('fc' + c.id, 'cam' + (camDead(c) ? ' off' : ''), 'CAM', c.dead ? 'DOWN' : camDead(c) ? 'OFF' : d + ' m', c.x, c.y + 0.35, c.z); }
         for (const i of F.intel) { const d = dist(i.x, i.z); if (d < 35) mk('fi' + i.id, 'int', 'INTEL', d + ' m', i.x, i.y + 0.8, i.z); }
-        if (F.kc) mk('fk', 'kc', 'KEYCARD', 'TERMINAL ' + F.lock + ' · ' + dist(F.kc.x, F.kc.z) + ' m', F.kc.x, F.kc.y + 0.9, F.kc.z);
+        if (F.kc) mk('fk', 'kcd', 'KEYCARD', 'TERMINAL ' + F.lock + ' · ' + dist(F.kc.x, F.kc.z) + ' m', F.kc.x, F.kc.y + 0.9, F.kc.z);
         for (const s of F.seen) mk('fs' + nid(s.e) + s.e.name, 'sn', '◆', 'CAM ' + dist(s.x, s.z) + ' m', s.x, s.y + 2.1, s.z);
         for (const c of F.sc) { const d = dist(c.x, c.z); if (d < 40) mk('fsc' + c.id, 'scm', 'SPY CAM', d + ' m', c.x, c.y + 0.3, c.z); }
       }

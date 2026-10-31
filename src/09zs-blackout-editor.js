@@ -248,6 +248,8 @@
       sec('Merc bot patrols'), ...sectionFields('game', ['botPatrol']),
       note('Patrolling merc bots walk a route between the active terminals, breakers and the extract instead of holding still.'),
       sec('Spy roll'), ...sectionFields('game', ['rollIFrames', 'rollCd', 'rollDist']),
+      sec('Online smoothing'), ...sectionFields('game', ['netBuf', 'netBufAuto']),
+      note('Other players are drawn a little in the past, between two states already received, so they move smoothly instead of jumping when a packet is late. A bigger buffer is smoother on bad connections but shows them later. With auto on, the buffer grows when packets arrive unevenly (up to 250 ms).'),
       sec('Bots'), ...sectionFields('game', ['mercs', 'spies']),
       sec('Bot difficulty'),
       field({ t: 's', opts: BOAI.names(), label: 'Bot level' }, () => BOAI.names()[BOAI.curLevel()] || '', (v) => { const i = BOAI.names().indexOf(v); return BOAI.names()[BOAI.setLevel(i < 0 ? 2 : i)]; }),
@@ -270,7 +272,7 @@
       sec('Shadow cloak'), ...sectionFields('spy', ['cloak', 'cloakK', 'cloakDark', 'cloakSpeed', 'cloakBody']),
       sec('Climb at a ledge'), ...sectionFields('spy', ['climb', 'climbH', 'climbTime']),
       sec('World and bots'), ...sectionFields('spy', ['lamps', 'botGadgets', 'loadoutScreen']),
-      sec('Camera and crosshair'), ...sectionFields('spy', ['xhair', 'xhairSize', 'camDown', 'camUp']),
+      sec('Camera and crosshair'), ...sectionFields('spy', ['xhair', 'xhairSize', 'camDown', 'camUp', 'camSide', 'camDist', 'camReturn', 'otsSpread']),
       note('Gadget counts refill when the next round starts. Everything else applies live.'),
       el('div', { class: 'btns' }, btn('Open loadout (F9)', () => { close(); if (window.BOLOADOUT) BOLOADOUT.open(false); }, 'pri'),
         btn('Reset spy kit', () => { BOCFG.resetSection('spy'); render(); toast('Spy kit reset'); }, 'dng'))];

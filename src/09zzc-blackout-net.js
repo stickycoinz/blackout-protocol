@@ -44,10 +44,12 @@
   function stateMsg() {
     return { t: 'bost', n: R.hackNeed, h: R.terminals.map((t) => [t.id, r2(t.hacked ? 1 : t.prog), t.hacked ? 1 : 0]), o: R.roundOver ? 1 : 0 };
   }
-  let lastSig = '', lastAt = 0;
+  let lastSig = '', lastAt = 0, lastHard = '';
   function hostTick() {
     const m = stateMsg(), sig = JSON.stringify(m.h) + m.n + m.o, now = performance.now();
-    if (sig !== lastSig || now - lastAt > 250) { lastSig = sig; lastAt = now; bcast(m); }
+    // pass 24: a hacked flag, the hacks needed or the round end go at once; progress alone at most every 150 ms (it changed every frame while hacking)
+    const hard = JSON.stringify(m.h.map((x) => x[2])) + m.n + m.o;
+    if (hard !== lastHard || (sig !== lastSig && now - lastAt > 150) || now - lastAt > 500) { lastSig = sig; lastHard = hard; lastAt = now; bcast(m); }
     rosterTrim();
     remoteResp();
   }
